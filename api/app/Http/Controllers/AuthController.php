@@ -6,17 +6,24 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller {
-    public function login(Request $request) {
-        $user = User::where('email', $request->email)->first();
+    public function login(Request $request) 
+{
+    // Procura o utilizador pelo email
+    $user = User::where('email', $request->email)->first();
 
-        // Nota: Em produção usarias Hash::check, para o protótipo comparamos a pass
-        if (!$user || $request->password !== "123456") { // Ajusta para a tua lógica de teste
-            return response()->json(['message' => 'Credenciais inválidas'], 401);
-        }
-
+    // Se o user não existe OU a password enviada é diferente da que está na BD
+    // Nota: Estamos a comparar texto direto para facilitar o teu teste
+    if (!$user || $request->password !== $user->password_hash) {
         return response()->json([
-            'user' => $user,
-            'token' => 'token-simulado-' . $user->id // Para o React guardar no localStorage
-        ]);
+            'message' => 'Credenciais inválidas',
+            'debug_enviado' => $request->password,
+            'debug_na_bd' => $user ? $user->password_hash : 'não encontrado'
+        ], 401);
     }
+
+    return response()->json([
+        'user' => $user,
+        'token' => 'token-simulado' 
+    ]);
+}
 }

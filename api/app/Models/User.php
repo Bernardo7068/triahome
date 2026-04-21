@@ -19,5 +19,8 @@ class User extends Authenticatable {
     protected $hidden = ['password_hash'];
 
     // Para o Laravel saber que a password não se chama 'password'
-    public function getAuthPassword() { return $this->password_hash; }
+    public function getAuthPassword()
+{
+    return $this->password_hash;
+}
 }
