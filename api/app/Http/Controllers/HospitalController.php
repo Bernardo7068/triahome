@@ -13,4 +13,16 @@ class HospitalController extends Controller {
         // Usa a VIEW de lotação
         return DB::select("SELECT * FROM v_lotacao_hospitais");
     }
+
+    public function chamarUtente(Request $request, $triagem_id) {
+    // Atualiza a fila de espera para "chamado"
+    \DB::table('fila_espera')
+        ->where('triagem_id', $triagem_id)
+        ->update(['estado' => 'chamado', 'chamado_em' => now()]);
+
+    // Opcional: Podias passar o número do guiché no request
+    return response()->json(['message' => 'Utente chamado com sucesso']);
+}
+
+
 }
