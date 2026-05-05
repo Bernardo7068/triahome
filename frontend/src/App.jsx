@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import UtenteDashboard from "./pages/UtenteDashboard";
 import MedicoDashboard from "./pages/MedicoDashboard";
 import SecretariaDashboard from "./pages/SecretariaDashboard";
+import TriagemIA from "./pages/TriagemIA";
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -41,13 +42,7 @@ function App() {
                 } />
 
                 {/* ROTA DA TRIAGEM: Onde o botão do utente clica */}
-                <Route path="/nova-triagem" element={
-                    <div className="p-10 bg-white rounded-3xl border">
-                        <h1 className="text-2xl font-black">Questionário de Triagem IA</h1>
-                        <p className="text-slate-500">O formulário será carregado aqui.</p>
-                        {/* <QuestionarioTriagem /> */}
-                    </div>
-                } />
+                <Route path="/nova-triagem" element={<TriagemIA />} />
 
                 {/* FALLBACK: Se houver erro de rota, volta ao início */}
                 <Route path="*" element={<Navigate to="/" />} />

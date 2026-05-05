@@ -11,13 +11,21 @@ class AuthController extends Controller {
     // Procura o utilizador pelo email
     $user = User::where('email', $request->email)->first();
 
-    // Se o user não existe OU a password enviada é diferente da que está na BD
-    // Nota: Estamos a comparar texto direto para facilitar o teu teste
-    if (!$user || $request->password !== $user->password_hash) {
+    // Debug
+    \Log::info('Login attempt', [
+        'email' => $request->email,
+        'user_found' => $user ? 'sim' : 'nao',
+        'user_id' => $user?->id
+    ]);
+
+    // Se o user não existe OU a password enviada não corresponde à password com hash na BD
+    if (!$user || !Hash::check($request->password, $user->password_hash)) {
         return response()->json([
             'message' => 'Credenciais inválidas',
-            'debug_enviado' => $request->password,
-            'debug_na_bd' => $user ? $user->password_hash : 'não encontrado'
+            'debug' => [
+                'user_exists' => $user ? 'sim' : 'nao',
+                'password_check' => $user ? Hash::check($request->password, $user->password_hash) : 'n/a'
+            ]
         ], 401);
     }
 

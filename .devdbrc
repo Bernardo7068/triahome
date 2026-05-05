@@ -2,5 +2,9 @@
   {
     "type": "sqlite",
     "path": "c:\\Users\\Bernardo\\triagem\\api\\database\\database.sqlite"
+  },
+  {
+    "type": "sqlite",
+    "path": "c:\\Users\\marti\\Desktop\\ESS\\projeto-website\\triahome\\api\\database\\database.sqlite"
   }
 ]
