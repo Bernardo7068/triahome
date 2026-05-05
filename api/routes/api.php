@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TriagemController;
 use App\Http\Controllers\HospitalController;
+use App\Http\Controllers\AdminController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -27,3 +28,8 @@ Route::post('/consultas/finalizar', [TriagemController::class, 'finalizarConsult
 // Rota para o histórico (GET)
 // O {id} é o ID do user e o {role} é 'utente' ou 'medico'
 Route::get('/historico/{id}/{role}', [TriagemController::class, 'historico']);
+Route::get('/secretaria/fila', [TriagemController::class, 'filaSecretaria']);
+// Rotas exclusivas para o Admin
+Route::get('/admin/utilizadores', [AdminController::class, 'listarUtilizadores']);
+Route::get('/admin/hospitais', [AdminController::class, 'listarHospitais']);
+Route::post('/admin/utilizadores/novo', [AdminController::class, 'criarUtilizador']);

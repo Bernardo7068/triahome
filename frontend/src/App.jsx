@@ -48,6 +48,10 @@ function App() {
                         {/* <QuestionarioTriagem /> */}
                     </div>
                 } />
+                <Route 
+  path="/secretaria" 
+  element={user?.role === 'secretaria' ? <SecretariaDashboard user={user} /> : <Navigate to="/" />} 
+/>
 
                 {/* FALLBACK: Se houver erro de rota, volta ao início */}
                 <Route path="*" element={<Navigate to="/" />} />

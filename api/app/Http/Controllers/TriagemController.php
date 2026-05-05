@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Triagem;
 use App\Models\User;
-// IMPORTANTE: Adiciona estas duas linhas abaixo para resolver o erro 500
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB; 
 
 class TriagemController extends Controller {
 
+    // O UTENTE cria a triagem escolhendo um hospital_id no formulário
     public function store(Request $request) {
         $triagem = Triagem::create([
             'utente_id' => $request->utente_id,
@@ -42,6 +42,7 @@ class TriagemController extends Controller {
         return response()->json($triagem);
     }
 
+    // O UTENTE vê o seu estado no hospital onde foi triado
     public function estadoAtual($utente_id) {
         $user = User::find($utente_id);
         if (!$user) return response()->json(null);
@@ -57,6 +58,7 @@ class TriagemController extends Controller {
     public function chamarUtentePorNome($nome_utente) {
         try {
             $user = DB::table('utilizadores')->where('nome', $nome_utente)->first();
+            // Busca a triagem mais recente deste utente
             $triagem = DB::table('triagens')->where('utente_id', $user->id)->orderBy('id', 'desc')->first();
 
             if ($triagem) {
@@ -65,7 +67,7 @@ class TriagemController extends Controller {
                 DB::table('fila_espera')->updateOrInsert(
                     ['triagem_id' => $triagem->id],
                     [
-                        'hospital_id' => $triagem->hospital_id ?? 1,
+                        'hospital_id' => $triagem->hospital_id, // Mantém o hospital original da triagem
                         'posicao' => 1,
                         'estado' => 'aguardar', 
                         'criado_em' => now()
@@ -80,10 +82,14 @@ class TriagemController extends Controller {
         }
     }
 
-    public function proximoPaciente() {
+    // O MÉDICO chama o próximo do SEU hospital
+    public function proximoPaciente(Request $request) {
         try {
+            $hospital_id = $request->query('hospital_id'); // Recebido do Frontend
+
             $proximo = DB::table('v_painel_medico')
                 ->where('estado_fila', 'aguardar')
+                ->where('hospital_id', $hospital_id) // FILTRO POR HOSPITAL
                 ->orderBy('nivel_prioridade', 'asc')
                 ->orderBy('posicao', 'asc')
                 ->first();
@@ -104,12 +110,10 @@ class TriagemController extends Controller {
         }
     }
 
-    // --- FINALIZAR CONSULTA (CORRIGIDO) ---
     public function finalizarConsulta(Request $request) {
         try {
             DB::beginTransaction();
 
-            // Removi 'criado_em' para evitar erros se a coluna não existir
             $consultaId = DB::table('consultas')->insertGetId([
                 'triagem_id'    => $request->triagem_id,
                 'medico_id'     => $request->medico_id,
@@ -136,14 +140,14 @@ class TriagemController extends Controller {
         }
     }
 
-    // --- HISTÓRICO (CORRIGIDO) ---
+    // Histórico Global do Utente ou específico do Médico
     public function historico($id = null, $role = null) {
         try {
             $query = DB::table('consultas as c')
                 ->join('utilizadores as u', 'c.utente_id', '=', 'u.id')
                 ->join('utilizadores as m', 'c.medico_id', '=', 'm.id')
                 ->join('triagens as t', 'c.triagem_id', '=', 't.id')
-                ->leftJoin('hospitais as h', 't.hospital_id', '=', 'h.id') // Usei leftJoin por segurança
+                ->leftJoin('hospitais as h', 't.hospital_id', '=', 'h.id')
                 ->select(
                     'c.*', 
                     'u.nome as nome_utente', 'u.nr_utente',
@@ -156,6 +160,26 @@ class TriagemController extends Controller {
             if ($role === 'medico') $query->where('c.medico_id', $id);
 
             return response()->json($query->orderBy('c.data_consulta', 'desc')->get());
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // A SECRETARIA só vê quem está pendente para o SEU hospital
+    public function filaSecretaria(Request $request) {
+        try {
+            $hospital_id = $request->query('hospital_id'); // Recebido do Frontend
+
+            $lista = DB::table('triagens')
+                ->join('utilizadores', 'triagens.utente_id', '=', 'utilizadores.id')
+                ->where('utilizadores.role', 'utente') 
+                ->where('triagens.hospital_id', $hospital_id) // FILTRO POR HOSPITAL
+                ->whereIn('triagens.estado', ['pendente', 'checkin_feito'])
+                ->select('triagens.*', 'utilizadores.nome', 'utilizadores.nr_utente')
+                ->orderBy('triagens.id', 'asc')
+                ->get();
+
+            return response()->json($lista);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
