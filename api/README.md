@@ -29,6 +29,16 @@ In addition, [Laracasts](https://laracasts.com) contains thousands of video tuto
 
 You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
 
+## Executar na rede local
+
+Para que outros computadores na mesma rede consigam aceder à API em desenvolvimento, inicie o servidor a escutar em todas as interfaces:
+
+```bash
+php artisan serve --host=0.0.0.0 --port=8000
+```
+
+Se houver firewall no Windows, liberte também a porta 8000.
+
 ## Agentic Development
 
 Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:

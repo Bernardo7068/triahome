@@ -12,7 +12,7 @@ Route::get('/user', function (Request $request) {
 
 
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/triagens', [TriagemController::class, 'store']);
+Route::post('/triagem', [TriagemController::class, 'store']);
 Route::get('/medico/fila', [HospitalController::class, 'getPainelMedico']);
 Route::get('/hospitais/lotacao', [HospitalController::class, 'getLotacao']);
 // Rota para o utente ver se tem uma triagem ativa
@@ -22,3 +22,8 @@ Route::get('/triagens/estado/{utente_id}', [TriagemController::class, 'estadoAtu
 Route::post('/checkin/{triagem_id}/chamar', [HospitalController::class, 'chamarUtente']);
 Route::post('/checkin/nome/{nome_utente}/chamar', [TriagemController::class, 'chamarUtentePorNome']);
 Route::get('/medico/proximo', [TriagemController::class, 'proximoPaciente']);
+Route::post('/consultas/finalizar', [TriagemController::class, 'finalizarConsulta']);
+
+// Rota para o histórico (GET)
+// O {id} é o ID do user e o {role} é 'utente' ou 'medico'
+Route::get('/historico/{id}/{role}', [TriagemController::class, 'historico']);
