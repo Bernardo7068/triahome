@@ -5,6 +5,8 @@ import Layout from "./components/Layout";
 import UtenteDashboard from "./pages/UtenteDashboard";
 import MedicoDashboard from "./pages/MedicoDashboard";
 import SecretariaDashboard from "./pages/SecretariaDashboard";
+import TriagemIA from "./pages/TriagemIA";
+import DebugLogin from "./pages/DebugLogin";
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -12,7 +14,10 @@ function App() {
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
+  console.log("👤 User state atual:", user); // Debug
+
   const handleLoginSuccess = (userData) => {
+    console.log("🔐 Login bem-sucedido:", userData); // Debug
     setUser(userData);
     sessionStorage.setItem("tria_user", JSON.stringify(userData));
   };
@@ -25,6 +30,9 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* ROTA DE DEBUG - Sempre acessível */}
+        <Route path="/debug-login" element={<DebugLogin />} />
+
         {/* SE NÃO HÁ USER: Vai para o Login */}
         {!user ? (
           <Route path="*" element={<Login onLoginSuccess={handleLoginSuccess} />} />
@@ -37,16 +45,13 @@ function App() {
                 <Route path="/" element={
                   user.role === "utente" ? <UtenteDashboard user={user} /> :
                   user.role === "medico" ? <MedicoDashboard user={user} /> :
+                  user.role === "secretaria" ? <SecretariaDashboard user={user} /> :
                   <SecretariaDashboard user={user} />
                 } />
 
-                {/* ROTA DA TRIAGEM: Onde o botão do utente clica */}
+                {/* ROTA DA TRIAGEM: Apenas para Utentes */}
                 <Route path="/nova-triagem" element={
-                    <div className="p-10 bg-white rounded-3xl border">
-                        <h1 className="text-2xl font-black">Questionário de Triagem IA</h1>
-                        <p className="text-slate-500">O formulário será carregado aqui.</p>
-                        {/* <QuestionarioTriagem /> */}
-                    </div>
+                  user.role === "utente" ? <TriagemIA user={user} /> : <Navigate to="/" />
                 } />
                 <Route 
   path="/secretaria" 
