@@ -50,7 +50,10 @@ function App() {
                 } />
                 <Route 
   path="/secretaria" 
-  element={user?.role === 'secretaria' ? <SecretariaDashboard user={user} /> : <Navigate to="/" />} 
+  element={user?.role === 'secretaria' || user?.role === 'admin' ? 
+    <SecretariaDashboard user={user} /> : // <--- ESTA PARTE É CRUCIAL
+    <Navigate to="/" />
+  } 
 />
 
                 {/* FALLBACK: Se houver erro de rota, volta ao início */}

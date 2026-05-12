@@ -3,19 +3,22 @@ import api from "../services/api";
 import BadgePrioridade from "../components/BadgePrioridade";
 import { Search, CheckCircle, LayoutList, History } from "lucide-react";
 
-export default function SecretariaDashboard() {
+// CORREÇÃO AQUI: Adicionado { user } nos parâmetros
+export default function SecretariaDashboard({ user }) {
   const [fila, setFila] = useState([]);
   const [visaoGeral, setVisaoGeral] = useState([]); // Guardamos a lista geral à parte
   const [aba, setAba] = useState("checkin");
   const [busca, setBusca] = useState("");
 
-const carregarFilas = async () => {
+  const carregarFilas = async () => {
     try {
-      // Agora o 'user' já existe e o código abaixo vai funcionar
-      const resSec = await api.get(`/secretaria/fila?hospital_id=${user.hospital_id}`);
+      // 2. Opcional Chaining (?) ajuda a não crashar se o user demorar a carregar
+      const hospitalId = user?.hospital_id || "";
+      
+      const resSec = await api.get(`/secretaria/fila?hospital_id=${hospitalId}`);
       setFila(resSec.data || []);
 
-      const resGeral = await api.get(`/medico/fila?hospital_id=${user.hospital_id}`);
+      const resGeral = await api.get(`/medico/fila?hospital_id=${hospitalId}`);
       setVisaoGeral(resGeral.data || []);
     } catch (e) { 
       console.error("Erro ao carregar filas:", e); 
@@ -27,7 +30,7 @@ const carregarFilas = async () => {
     carregarFilas(); 
     const timer = setInterval(carregarFilas, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [user]); // CORREÇÃO: Adicionado 'user' como dependência do useEffect
 
   const validarEntrada = async (nome) => {
     try {
@@ -53,7 +56,8 @@ const carregarFilas = async () => {
           case 'pendente': return <span className="text-amber-500 font-bold bg-amber-50 px-3 py-1 rounded-full">A Aguardar Check-in</span>;
           case 'aguardar': return <span className="text-blue-500 font-bold bg-blue-50 px-3 py-1 rounded-full">Na Sala de Espera</span>;
           case 'chamado': 
-          case 'em_consulta': return <span className="text-red-500 font-bold bg-red-50 px-3 py-1 rounded-full">Em Consulta Médica</span>;
+          case 'em_consulta': return <span className="text-red-500 font-bold bg-red-50 px-3 py-1 rounded-full">Em Consulta</span>;
+          case 'concluido': return <span className="text-green-500 font-bold bg-green-50 px-3 py-1 rounded-full text-xs">Finalizado</span>;
           default: return <span className="text-slate-400 font-bold bg-slate-100 px-3 py-1 rounded-full text-xs uppercase">{estado}</span>;
       }
   };
@@ -101,26 +105,32 @@ const carregarFilas = async () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {listaMostrada.filter(p => p.nome_utente.toLowerCase().includes(busca)).length > 0 ? (
-                listaMostrada.filter(p => p.nome_utente.toLowerCase().includes(busca)).map((p, i) => (
-                <tr key={i} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-6"><BadgePrioridade cor={p.cor_manchester} /></td>
-                    <td className="p-6 font-bold text-slate-700 text-lg">{p.nome_utente}</td>
-                    <td className="p-6 text-xs">{formatarEstado(p.estado_fila, p.estado_triagem || p.estado)}</td>
-                    
-                    {aba === "checkin" && (
-                    <td className="p-6 text-right">
-                        <button 
-                            onClick={() => validarEntrada(p.nome_utente)} 
-                            className="bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black hover:bg-green-600 transition-all shadow-md transform hover:-translate-y-0.5"
-                        >
-                            <CheckCircle size={14} className="inline mr-2 mb-0.5"/>
-                            Validar Entrada
-                        </button>
-                    </td>
-                    )}
-                </tr>
-                ))
+            {listaMostrada.filter(p => (p.nome_utente || p.nome || "").toLowerCase().includes(busca)).length > 0 ? (
+                listaMostrada.filter(p => (p.nome_utente || p.nome || "").toLowerCase().includes(busca)).map((p, i) => {
+                  
+                  // Guardamos o nome correto numa variável para facilitar
+                  const nomePaciente = p.nome_utente || p.nome || "Utente Desconhecido";
+
+                  return (
+                    <tr key={i} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-6"><BadgePrioridade cor={p.cor_manchester} /></td>
+                        <td className="p-6 font-bold text-slate-700 text-lg">{nomePaciente}</td>
+                        <td className="p-6 text-xs">{formatarEstado(p.estado_fila, p.estado_triagem || p.estado)}</td>
+                        
+                        {aba === "checkin" && (
+                        <td className="p-6 text-right">
+                            <button 
+                                onClick={() => validarEntrada(nomePaciente)} 
+                                className="bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black hover:bg-green-600 transition-all shadow-md transform hover:-translate-y-0.5"
+                            >
+                                <CheckCircle size={14} className="inline mr-2 mb-0.5"/>
+                                Validar Entrada
+                            </button>
+                        </td>
+                        )}
+                    </tr>
+                  );
+                })
             ) : (
                 <tr>
                     <td colSpan={4} className="p-16 text-center text-slate-400 font-medium italic border-dashed border-2 m-4 rounded-3xl">

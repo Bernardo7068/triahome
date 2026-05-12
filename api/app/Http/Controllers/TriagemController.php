@@ -98,8 +98,7 @@ class TriagemController extends Controller {
                 DB::table('fila_espera')
                     ->where('triagem_id', $proximo->triagem_id)
                     ->update([
-                        'estado' => 'em_consulta',
-                        'chamado_em' => now()
+                        'estado' => 'em_consulta'
                     ]);
 
                 return response()->json($proximo);
@@ -166,22 +165,59 @@ class TriagemController extends Controller {
     }
 
     // A SECRETARIA só vê quem está pendente para o SEU hospital
-    public function filaSecretaria(Request $request) {
-        try {
-            $hospital_id = $request->query('hospital_id'); // Recebido do Frontend
+    public function filaSecretaria(Request $request)
+{
+    $hospitalId = $request->query('hospital_id');
 
-            $lista = DB::table('triagens')
-                ->join('utilizadores', 'triagens.utente_id', '=', 'utilizadores.id')
-                ->where('utilizadores.role', 'utente') 
-                ->where('triagens.hospital_id', $hospital_id) // FILTRO POR HOSPITAL
-                ->whereIn('triagens.estado', ['pendente', 'checkin_feito'])
-                ->select('triagens.*', 'utilizadores.nome', 'utilizadores.nr_utente')
-                ->orderBy('triagens.id', 'asc')
-                ->get();
+    $query = DB::table('triagens')
+        ->join('utilizadores', 'triagens.utente_id', '=', 'utilizadores.id')
+        ->select(
+            'triagens.id',
+            'utilizadores.nome', // Nome que vem da tabela utilizadores
+            'triagens.cor_manchester',
+            'triagens.estado',
+            'triagens.criado_em'
+        )
+        // CRUCIAL: Garantir que filtramos por pendente OU checkin_feito se necessário
+        ->where('triagens.estado', 'pendente');
 
-            return response()->json($lista);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+    if ($hospitalId) {
+        $query->where('triagens.hospital_id', $hospitalId);
     }
+
+    return response()->json($query->get());
+}
+
+// Esta função servirá tanto para a Secretaria como para a Visão Geral do Médico
+public function filaHospital(Request $request)
+{
+    $hospitalId = $request->query('hospital_id');
+
+    $query = DB::table('triagens')
+        ->join('utilizadores', 'triagens.utente_id', '=', 'utilizadores.id')
+        // O leftJoin é o segredo: ele traz o utente mesmo que ele ainda não esteja na fila_espera
+        ->leftJoin('fila_espera', 'triagens.id', '=', 'fila_espera.triagem_id')
+        ->select(
+            'triagens.id as triagem_id',
+            'utilizadores.nome as nome_utente',
+            'triagens.cor_manchester',
+            'triagens.estado as estado_triagem', // pendente, em_espera, finalizado
+            'fila_espera.estado as estado_fila',   // aguardar, em_consulta, concluido (pode ser null)
+            'triagens.criado_em'
+        );
+
+    if ($hospitalId) {
+        $query->where('triagens.hospital_id', $hospitalId);
+    }
+
+    // Ordenação Manchester para facilitar a vida ao médico
+    $query->orderByRaw("CASE 
+        WHEN triagens.cor_manchester = 'vermelho' THEN 1 
+        WHEN triagens.cor_manchester = 'laranja' THEN 2 
+        WHEN triagens.cor_manchester = 'amarelo' THEN 3 
+        WHEN triagens.cor_manchester = 'verde' THEN 4 
+        ELSE 5 END");
+
+    return response()->json($query->get());
+}
 }
