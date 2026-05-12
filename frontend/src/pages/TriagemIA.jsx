@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cancelarTriagem, iniciarTriagem, responderTriagem, statusTriagem } from '../services/triagemService';
+import { cancelarTriagem, iniciarTriagem, responderTriagem, statusTriagem, guardarResultadoTriagem } from '../services/triagemService';
 
 function mensagemFinal(resultado) {
   if (!resultado) return '';
@@ -16,7 +16,49 @@ function mensagemFinal(resultado) {
   return partes.join('\n\n');
 }
 
-export default function TriagemIA() {
+function parseResultado(texto) {
+  /**
+   * Extrai categoria, justificação e ação do texto da IA.
+   * Exemplo:
+   * "Categoria: Amarelo
+   *  Justificação: Febre alta...
+   *  Ação recomendada: Procurar médico..."
+   */
+  let categoria = '';
+  let justificacao = '';
+  let acao = '';
+
+  const linhas = texto.split('\n');
+  for (let linha of linhas) {
+    const lower = linha.toLowerCase();
+    // Corrigido: usar .includes() em vez de 'in' (que é para objetos)
+    if (lower.includes('categoria') && linha.includes(':')) {
+      categoria = linha.split(':')[1]?.trim() || '';
+    } else if ((lower.includes('justif') || lower.includes('fundamentação')) && linha.includes(':')) {
+      justificacao = linha.split(':')[1]?.trim() || '';
+    } else if ((lower.includes('ação') || lower.includes('acao') || lower.includes('recomend')) && linha.includes(':')) {
+      acao = linha.split(':')[1]?.trim() || '';
+    }
+  }
+
+  // Fallback: tenta extrair a cor diretamente do texto
+  const textLower = texto.toLowerCase();
+  if (!categoria) {
+    if (textLower.includes('vermelho')) categoria = 'Vermelho';
+    else if (textLower.includes('laranja')) categoria = 'Laranja';
+    else if (textLower.includes('amarelo')) categoria = 'Amarelo';
+    else if (textLower.includes('verde')) categoria = 'Verde';
+    else if (textLower.includes('azul') || textLower.includes('autocuidado')) categoria = 'Azul';
+    else categoria = 'Amarelo'; // default
+  }
+
+  if (!justificacao) justificacao = texto.substring(0, 300);
+  if (!acao) acao = 'Procurar atendimento médico imediatamente';
+
+  return { categoria, justificacao, acao };
+}
+
+export default function TriagemIA({ user }) {
   const [etapa, setEtapa] = useState('inicio');
   const [entrada, setEntrada] = useState('');
   const [sessionId, setSessionId] = useState('');
@@ -59,7 +101,6 @@ export default function TriagemIA() {
 
     setEtapa('inicio');
     setEntrada('');
-    setSintomasIniciais('');
     setSessionId('');
     setMensagemSistema('');
     setResultado(null);
@@ -89,6 +130,27 @@ export default function TriagemIA() {
         setEtapa('resultado');
         setMensagemSistema('');
         setSessionId(data.session_id || '');
+        
+        // Guardar resultado na BD
+        try {
+          const parsedResult = parseResultado(data.resultado);
+          console.log('📤 Enviando resultado para guardar:', { userId: user?.id, parsed: parsedResult });
+          
+          const saveResponse = await guardarResultadoTriagem(
+            user.id,
+            parsedResult.categoria,
+            parsedResult.justificacao,
+            parsedResult.acao,
+            texto
+          );
+          
+          console.log('✅ Triagem guardada na BD com sucesso:', saveResponse);
+          setMensagemSistema('✅ Triagem guardada! A secretaria pode validar agora.');
+        } catch (err) {
+          console.error('❌ Erro ao guardar triagem:', err);
+          setErro(`⚠️ Triagem feita mas erro ao guardar: ${err.message}`);
+        }
+        
         return;
       }
 
@@ -124,6 +186,27 @@ export default function TriagemIA() {
         setMensagemSistema('');
         setEntrada('');
         setSessionId(data.session_id || sessionId);
+        
+        // Guardar resultado na BD
+        try {
+          const parsedResult = parseResultado(data.resultado);
+          console.log('📤 Enviando resultado (resposta) para guardar:', { userId: user?.id, parsed: parsedResult });
+          
+          const saveResponse = await guardarResultadoTriagem(
+            user.id,
+            parsedResult.categoria,
+            parsedResult.justificacao,
+            parsedResult.acao,
+            texto
+          );
+          
+          console.log('✅ Triagem guardada na BD com sucesso:', saveResponse);
+          setMensagemSistema('✅ Triagem guardada! A secretaria pode validar agora.');
+        } catch (err) {
+          console.error('❌ Erro ao guardar triagem:', err);
+          setErro(`⚠️ Triagem feita mas erro ao guardar: ${err.message}`);
+        }
+        
         return;
       }
 

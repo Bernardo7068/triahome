@@ -116,7 +116,7 @@ CREATE TABLE consultas (
         CHECK(estado IN ('aguardar_medico','em_curso','finalizada','transferida')),
     gabinete TEXT,
     diagnostico TEXT,
-    prescricao TEXT,
+    prescricao TEXT
     notas_clinicas TEXT,
     data_consulta DATETIME DEFAULT CURRENT_TIMESTAMP,
     criado_em TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))

@@ -12,7 +12,9 @@ Route::get('/user', function (Request $request) {
 
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
 Route::post('/triagem', [TriagemController::class, 'store']);
+Route::post('/triagem/guardar-resultado', [TriagemController::class, 'guardarResultadoTriagem']);
 Route::get('/medico/fila', [HospitalController::class, 'getPainelMedico']);
 Route::get('/hospitais/lotacao', [HospitalController::class, 'getLotacao']);
 // Rota para o utente ver se tem uma triagem ativa

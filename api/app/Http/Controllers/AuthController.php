@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller {
     public function login(Request $request) 
@@ -29,9 +30,71 @@ class AuthController extends Controller {
         ], 401);
     }
 
+    // Prepara dados do utilizador com role incluído
+    $userData = [
+        'id' => $user->id,
+        'nome' => $user->nome,
+        'email' => $user->email,
+        'role' => $user->role,
+        'nr_funcionario' => $user->nr_funcionario,
+        'especialidade' => $user->especialidade,
+        'nr_utente' => $user->nr_utente,
+    ];
+
     return response()->json([
-        'user' => $user,
+        'user' => $userData,
         'token' => 'token-simulado' 
     ]);
 }
+
+    public function register(Request $request) 
+    {
+        // Valida os campos obrigatórios
+        try {
+            $validated = $request->validate([
+                'nome' => 'required|string|max:255',
+                'email' => 'required|email|unique:utilizadores,email',
+                'password' => 'required|string|min:6',
+                'role' => 'required|in:utente,secretaria,medico,admin',
+                'nr_utente' => 'nullable|unique:utilizadores,nr_utente',
+                'nr_identificacao' => 'nullable|string|max:20',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Erro na validação',
+                'errors' => $e->errors()
+            ], 422);
+        }
+
+        // Por segurança, força que o registo via API seja sempre "utente"
+        // (Médicos, Secretarias, Admins devem ser criados manualmente por admin)
+        $role = $request->input('role', 'utente');
+        if ($role !== 'utente') {
+            $role = 'utente'; // Force sempre para utente
+        }
+
+        // Cria novo utilizador
+        $user = User::create([
+            'nome' => $validated['nome'],
+            'email' => $validated['email'],
+            'password_hash' => Hash::make($validated['password']),
+            'role' => $role,
+            'nr_utente' => $validated['nr_utente'] ?? null,
+        ]);
+
+        // Devolve o utilizador criado (sem exposição de password)
+        $userData = [
+            'id' => $user->id,
+            'nome' => $user->nome,
+            'email' => $user->email,
+            'role' => $user->role,
+            'nr_utente' => $user->nr_utente,
+        ];
+
+        return response()->json([
+            'message' => 'Utilizador registado com sucesso',
+            'user' => $userData,
+            'token' => 'token-simulado'
+        ], 201);
+    }
 }

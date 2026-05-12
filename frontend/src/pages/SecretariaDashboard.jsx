@@ -25,8 +25,10 @@ export default function SecretariaDashboard() {
     } catch (e) { alert("Erro ao validar."); }
   };
 
-  const listaCheckin = fila.filter(p => p.estado_triagem === 'pendente' || p.estado_triagem === 'checkin_feito');
-  const listaGeral = fila.filter(p => p.estado_triagem !== 'pendente' && p.estado_triagem !== 'checkin_feito');
+  // Admissão: triagens pendentes (incluindo as com resultado da IA)
+  const listaCheckin = fila.filter(p => p.estado_triagem === 'pendente');
+  // Visão Geral: todas as outras
+  const listaGeral = fila.filter(p => p.estado_triagem !== 'pendente');
   const listaMostrada = aba === "checkin" ? listaCheckin : listaGeral;
 
   return (
