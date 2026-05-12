@@ -12,6 +12,12 @@ class TriagemController extends Controller {
 
     // O UTENTE cria a triagem escolhendo um hospital_id no formulário
     public function store(Request $request) {
+        $headers = [
+            'Access-Control-Allow-Origin' => 'http://localhost:5175',
+            'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS, PUT, DELETE',
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Credentials' => 'true'
+        ];
         $triagem = Triagem::create([
             'utente_id' => $request->utente_id,
             'hospital_id' => $request->hospital_id,
@@ -36,7 +42,7 @@ class TriagemController extends Controller {
             ]);
 
         } catch (\Exception $e) {
-            return response()->json(['error' => 'IA Indisponível'], 500);
+            return response()->json(['error' => 'IA Indisponível'], 500, $headers);
         }
 
         return response()->json($triagem);
@@ -54,103 +60,13 @@ class TriagemController extends Controller {
          *   "resumo_clinico": "..."
          * }
          */
-        try {
-            // Mapeia categoria para cor_manchester (case-insensitive)
-            $categoria = strtolower(trim($request->categoria ?? ''));
-            $cor_mapa = [
-                'vermelho' => 'vermelho',
-                'laranja' => 'laranja',
-                'amarelo' => 'amarelo',
-                'verde' => 'verde',
-                'azul' => 'azul',
-                'autocuidado' => 'azul',
-                'branco' => 'branco'
-            ];
-            $cor = $cor_mapa[$categoria] ?? 'verde';
-            
-            \Log::info('Guardando triagem', [
-                'utente_id' => $request->utente_id,
-                'categoria' => $request->categoria,
-                'cor_mapeada' => $cor
-            ]);
-            
-            // Cria ou atualiza a triagem do utente
-            // Procura pela triagem mais recente (pode estar em qualquer estado)
-            $triagem = Triagem::where('utente_id', $request->utente_id)
-                ->orderBy('id', 'desc')
-                ->first();
-            
-            if ($triagem && in_array($triagem->estado, ['pendente', 'checkin_feito'])) {
-                // Atualiza triagem existente
-                $triagem->update([
-                    'cor_manchester' => $cor,
-                    'nivel_prioridade' => $this->nivelPrioridadePorCor($cor),
-                    'resumo_ia' => $request->justificacao . "\nAção: " . $request->acao,
-                    'conselhos_autocuidado' => $request->acao,
-                    'estado' => 'pendente'  // Muda de volta para pendente para secretaria ver
-                ]);
-                \Log::info('Triagem atualizada', ['triagem_id' => $triagem->id, 'estado' => 'pendente']);
-            } else {
-                // Cria nova triagem
-                $triagem = Triagem::create([
-                    'utente_id' => $request->utente_id,
-                    'hospital_id' => $request->hospital_id ?? 1,
-                    'cor_manchester' => $cor,
-                    'nivel_prioridade' => $this->nivelPrioridadePorCor($cor),
-                    'resumo_ia' => $request->justificacao . "\nAção: " . $request->acao,
-                    'conselhos_autocuidado' => $request->acao,
-                    'estado' => 'pendente'  // Estado inicial para secretaria validar
-                ]);
-                \Log::info('Triagem criada', ['triagem_id' => $triagem->id, 'estado' => 'pendente']);
-            }
-
-            // Cria entrada na fila de espera (se não existir)
-            $existeFila = DB::table('fila_espera')->where('triagem_id', $triagem->id)->first();
-            if (!$existeFila) {
-                DB::table('fila_espera')->insert([
-                    'triagem_id' => $triagem->id,
-                    'hospital_id' => $triagem->hospital_id ?? 1,
-                    'posicao' => DB::table('fila_espera')->max('posicao') + 1,
-                    'estado' => 'aguardar',
-                    'criado_em' => now()
-                ]);
-            }
-
-            return response()->json([
-                'message' => 'Triagem guardada com sucesso',
-                'triagem' => $triagem
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Erro ao guardar triagem',
-                'details' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    private function nivelPrioridadePorCor($cor) {
-        $mapa = [
-            'vermelho' => 1,
-            'laranja' => 2,
-            'amarelo' => 3,
-            'verde' => 4,
-            'azul' => 5
+        $headers = [
+            'Access-Control-Allow-Origin' => 'http://localhost:5175',
+            'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS, PUT, DELETE',
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Credentials' => 'true'
         ];
-        return $mapa[strtolower($cor)] ?? 5;
-    }
 
-    public function guardarResultadoTriagem(Request $request) {
-        /**
-         * Recebe resultado final da IA e guarda na BD.
-         * Body: {
-         *   "utente_id": 1,
-         *   "hospital_id": 1,
-         *   "categoria": "Amarelo",
-         *   "justificacao": "...",
-         *   "acao": "...",
-         *   "resumo_clinico": "..."
-         * }
-         */
         try {
             // Mapeia categoria para cor_manchester (case-insensitive)
             $categoria = strtolower(trim($request->categoria ?? ''));
@@ -216,12 +132,12 @@ class TriagemController extends Controller {
             return response()->json([
                 'message' => 'Triagem guardada com sucesso',
                 'triagem' => $triagem
-            ], 201);
+            ], 201, $headers);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erro ao guardar triagem',
                 'details' => $e->getMessage()
-            ], 500);
+            ], 500, isset($headers) ? $headers : []);
         }
     }
 
