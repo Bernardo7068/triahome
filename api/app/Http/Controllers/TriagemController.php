@@ -193,13 +193,19 @@ class TriagemController extends Controller {
     }
 
     // O MÉDICO chama o próximo do SEU hospital
+    // O MÉDICO chama o próximo do SEU hospital
     public function proximoPaciente(Request $request) {
         try {
-            $hospital_id = $request->query('hospital_id'); // Recebido do Frontend
+            $hospital_id = $request->query('hospital_id'); 
+            
+            // PROTEÇÃO EXTRA: Se vier vazio ou "undefined", assume Hospital 1
+            if (empty($hospital_id) || $hospital_id === 'undefined') {
+                $hospital_id = 1;
+            }
 
             $proximo = DB::table('v_painel_medico')
                 ->where('estado_fila', 'aguardar')
-                ->where('hospital_id', $hospital_id) // FILTRO POR HOSPITAL
+                ->where('hospital_id', $hospital_id) // Agora nunca vai estar vazio
                 ->orderBy('nivel_prioridade', 'asc')
                 ->orderBy('posicao', 'asc')
                 ->first();
@@ -227,9 +233,11 @@ class TriagemController extends Controller {
                 'triagem_id'    => $request->triagem_id,
                 'medico_id'     => $request->medico_id,
                 'utente_id'     => $request->utente_id,
+                // Passamos a enviar também o hospital_id, porque o teu colega adicionou esta coluna
+                'hospital_id'   => DB::table('triagens')->where('id', $request->triagem_id)->value('hospital_id') ?? 1,
                 'diagnostico'   => $request->diagnostico,
-                'prescricao'    => $request->prescricao,
-                'data_consulta' => now()
+                'prescricao'    => $request->prescricao
+                // REMOVIDO: data_consulta e created_at
             ]);
 
             DB::table('triagens')
@@ -250,27 +258,39 @@ class TriagemController extends Controller {
     }
 
     // Histórico Global do Utente ou específico do Médico
+    // Histórico Global do Utente ou específico do Médico
+    // Histórico Global do Utente ou específico do Médico
     public function historico($id = null, $role = null) {
         try {
             $query = DB::table('consultas as c')
                 ->join('utilizadores as u', 'c.utente_id', '=', 'u.id')
                 ->join('utilizadores as m', 'c.medico_id', '=', 'm.id')
                 ->join('triagens as t', 'c.triagem_id', '=', 't.id')
-                ->leftJoin('hospitais as h', 't.hospital_id', '=', 'h.id')
                 ->select(
-                    'c.*', 
-                    'u.nome as nome_utente', 'u.nr_utente',
+                    'c.id',
+                    't.criado_em as data_consulta', // <-- O TRUQUE! Usamos a data da triagem
+                    'c.diagnostico',
+                    'c.prescricao',
+                    'u.nome as nome_utente', 
                     'm.nome as nome_medico',
-                    't.cor_manchester', 't.resumo_ia',
-                    'h.nome as nome_hospital'
+                    't.cor_manchester', 
+                    't.resumo_ia'
                 );
 
-            if ($role === 'utente') $query->where('c.utente_id', $id);
-            if ($role === 'medico') $query->where('c.medico_id', $id);
+            if ($role === 'utente') {
+                $query->where('c.utente_id', $id);
+            }
+            if ($role === 'medico') {
+                $query->where('c.medico_id', $id);
+            }
 
-            return response()->json($query->orderBy('c.data_consulta', 'desc')->get());
+            // Ordenamos pelo ID da consulta (as mais recentes têm IDs maiores)
+            $resultados = $query->orderBy('c.id', 'desc')->get();
+            
+            return response()->json($resultados);
+
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => 'Erro SQL: ' . $e->getMessage()], 500);
         }
     }
 

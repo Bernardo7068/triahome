@@ -24,7 +24,8 @@ class HospitalController extends Controller {
                     'triagens.resumo_ia', // Faltava isto para veres a queixa no popup!
                     'triagens.estado as estado_triagem', 
                     'fila_espera.estado as estado_fila',
-                    'triagens.hospital_id'
+                    'triagens.hospital_id',
+                    'triagens.criado_em as hora_entrada' // <-- NOVA LINHA PARA O TEMPO DE ESPERA
                 );
 
             // Filtra pelo hospital do médico logado
