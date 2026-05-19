@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import BadgePrioridade from "../components/BadgePrioridade";
-import { Search, CheckCircle, LayoutList, History } from "lucide-react";
+import { Search, CheckCircle, LayoutList, History, BarChart3 } from "lucide-react";
 
 // CORREÇÃO AQUI: Adicionado { user } nos parâmetros
 export default function SecretariaDashboard({ user }) {
+  const navigate = useNavigate();
   const [fila, setFila] = useState([]);
   const [visaoGeral, setVisaoGeral] = useState([]); // Guardamos a lista geral à parte
   const [aba, setAba] = useState("checkin");
@@ -66,7 +68,7 @@ export default function SecretariaDashboard({ user }) {
     <div className="space-y-6 max-w-6xl mx-auto pb-10">
       
       {/* ABAS */}
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-4">
         <button 
           onClick={() => setAba("checkin")} 
           className={`flex-1 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all ${aba === "checkin" ? 'bg-blue-600 text-white shadow-lg' : 'bg-white border text-slate-400 hover:bg-slate-50'}`}
@@ -78,6 +80,12 @@ export default function SecretariaDashboard({ user }) {
           className={`flex-1 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all ${aba === "geral" ? 'bg-slate-900 text-white shadow-lg' : 'bg-white border text-slate-400 hover:bg-slate-50'}`}
         >
           <History size={20} /> Visão Geral do Hospital ({listaGeral.length})
+        </button>
+        <button
+          onClick={() => navigate('/estatisticas')}
+          className="flex-1 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all bg-slate-100 text-slate-700 hover:bg-slate-200"
+        >
+          <BarChart3 size={20} /> Estatísticas
         </button>
       </div>
 

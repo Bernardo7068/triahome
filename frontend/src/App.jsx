@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import UtenteDashboard from "./pages/UtenteDashboard";
 import MedicoDashboard from "./pages/MedicoDashboard";
 import SecretariaDashboard from "./pages/SecretariaDashboard";
+import EstatisticasClinicas from "./pages/EstatisticasClinicas";
 import TriagemIA from "./pages/TriagemIA";
 import DebugLogin from "./pages/DebugLogin";
 
@@ -53,6 +54,16 @@ function App() {
                 <Route path="/nova-triagem" element={
                   user.role === "utente" ? <TriagemIA user={user} /> : <Navigate to="/" />
                 } />
+                <Route
+                  path="/estatisticas"
+                  element={
+                    user.role === "medico" || user.role === "secretaria" || user.role === "admin" ? (
+                      <EstatisticasClinicas user={user} />
+                    ) : (
+                      <Navigate to="/" />
+                    )
+                  }
+                />
                 <Route 
   path="/secretaria" 
   element={user?.role === 'secretaria' || user?.role === 'admin' ? 
