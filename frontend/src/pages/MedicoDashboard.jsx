@@ -106,30 +106,6 @@ export default function MedicoDashboard({ user }) {
     return `${horas}h ${minutos}m`;
   };
 
-  const ModalVisualizarRelatorio = ({ dados, onClose }) => (
-    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-2xl rounded-4xl overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300">
-        <button onClick={onClose} className="absolute top-8 right-8 text-slate-400 hover:text-slate-900"><X /></button>
-        <div className="p-12 font-mono text-sm text-slate-800">
-          <div className="text-center border-b-2 border-dashed pb-8 mb-8">
-            <h2 className="text-2xl font-black uppercase tracking-tighter italic">Relatório Clínico</h2>
-            <p className="font-bold text-blue-600">Serviço Nacional de Saúde</p>
-          </div>
-          <div className="grid grid-cols-2 gap-6 mb-8">
-            <div><p className="text-[10px] uppercase text-slate-400 font-bold">Paciente</p><p className="font-black text-lg">{dados.nome_utente}</p></div>
-            <div><p className="text-[10px] uppercase text-slate-400 font-bold">Data</p><p className="font-black text-lg">{new Date(dados.data_consulta).toLocaleDateString()}</p></div>
-          </div>
-          <div className="bg-slate-50 p-8 rounded-4xl border border-slate-100 mb-8 space-y-6">
-            <div><p className="text-[10px] font-black text-blue-600 mb-2 uppercase italic tracking-widest">Diagnóstico</p><p className="text-base font-medium leading-relaxed">"{dados.diagnostico}"</p></div>
-            <div><p className="text-[10px] font-black text-green-600 mb-2 uppercase italic tracking-widest">Prescrição</p><p className="text-base font-medium leading-relaxed">"{dados.prescricao}"</p></div>
-          </div>
-          <div className="text-center opacity-40 text-[9px] uppercase mt-12"><p>Validado pelo Dr. {user?.nome}</p></div>
-        </div>
-        <div className="bg-slate-50 p-6 flex justify-center"><button onClick={() => window.print()} className="flex items-center gap-2 bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-600 transition-all"><Printer size={18}/> Imprimir / PDF</button></div>
-      </div>
-    </div>
-  );
-
   // Listas filtradas
   const listaEspera = fila.filter(p => p.estado_fila === 'aguardar');
   const listaGeral = fila;
@@ -146,28 +122,10 @@ export default function MedicoDashboard({ user }) {
       }
   };
 
-
   return (
     <div className="space-y-6 w-full">
-      {/* MENU */}
-      <div className="flex flex-wrap gap-4 mb-6 bg-white p-2 rounded-3xl shadow-sm border">
-        <button onClick={() => setAbaAtiva("espera")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'espera' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
-          <Clock size={20}/> Sala de Espera ({listaEspera.length})
-        </button>
-        <button onClick={() => setAbaAtiva("geral")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'geral' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
-          <LayoutDashboard size={20}/> Visão Geral ({listaGeral.length})
-        </button>
-        <button onClick={() => setAbaAtiva("historico")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'historico' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
-          <History size={20}/> Atendimentos ({historico.length})
-        </button>
-        <button onClick={() => navigate('/estatisticas')} className="flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all bg-slate-100 text-slate-700 hover:bg-slate-200">
-          <BarChart3 size={20}/> Estatísticas
-        </button>
-        {consultaAtiva && (
-          <button onClick={() => setAbaAtiva("consulta")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'consulta' ? 'bg-red-500 text-white shadow-lg' : 'bg-red-50 text-red-500 border border-red-200'}`}>
-            <AlertCircle size={20} className={abaAtiva !== 'consulta' ? "animate-pulse" : ""}/> Em Consulta
-          </button>
-        )}
+      
+      {/* MENU UNIFICADO */}
       <div className="flex flex-col xl:flex-row gap-4 mb-6 bg-white p-2 rounded-3xl shadow-sm border">
         <div className="flex flex-1 gap-4">
           <button onClick={() => setAbaAtiva("espera")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'espera' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
@@ -180,6 +138,9 @@ export default function MedicoDashboard({ user }) {
         <div className="flex flex-1 gap-4">
           <button onClick={() => setAbaAtiva("historico")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'historico' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
             <History size={20}/> <span className="hidden sm:inline">Atendimentos</span> ({historico.length})
+          </button>
+          <button onClick={() => navigate('/estatisticas')} className="flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all bg-slate-100 text-slate-700 hover:bg-slate-200">
+            <BarChart3 size={20}/> <span className="hidden md:inline">Estatísticas</span>
           </button>
           {consultaAtiva && (
             <button onClick={() => setAbaAtiva("consulta")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'consulta' ? 'bg-red-500 text-white shadow-lg' : 'bg-red-50 text-red-500 border border-red-200'}`}>
@@ -337,7 +298,7 @@ export default function MedicoDashboard({ user }) {
         </div>
       )}
 
-      {/* POPUP DE PRÉ-DIAGNÓSTICO DA IA (Este fica interno porque é só para mostrar os sintomas na fila) */}
+      {/* POPUP DE PRÉ-DIAGNÓSTICO DA IA */}
       {pacientePopup && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white p-12 rounded-4xl w-full max-w-lg relative text-center shadow-2xl animate-in zoom-in-95 duration-200">
@@ -356,7 +317,7 @@ export default function MedicoDashboard({ user }) {
         </div>
       )}
 
-      {/* AQUI ESTÁ O NOVO COMPONENTE EXTERNO PARA O RELATÓRIO DO HISTÓRICO! */}
+      {/* COMPONENTE EXTERNO PARA O RELATÓRIO DO HISTÓRICO */}
       {relatorioParaVer && <ModalRelatorio dados={relatorioParaVer} onClose={() => setRelatorioParaVer(null)} />}
     </div>
   );
