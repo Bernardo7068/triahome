@@ -204,11 +204,30 @@ class TriagemController extends Controller {
                 $hospital_id = 1;
             }
 
-            $proximo = DB::table('v_painel_medico')
-                ->where('estado_fila', 'aguardar')
-                ->where('hospital_id', $hospital_id) // Agora nunca vai estar vazio
-                ->orderBy('nivel_prioridade', 'asc')
-                ->orderBy('posicao', 'asc')
+            $proximo = DB::table('fila_espera as f')
+                ->join('triagens as t', 'f.triagem_id', '=', 't.id')
+                ->join('utilizadores as u', 't.utente_id', '=', 'u.id')
+                ->select(
+                    't.id as triagem_id',
+                    't.utente_id',
+                    'u.nome as nome_utente',
+                    't.cor_manchester',
+                    't.resumo_ia',
+                    't.estado as estado_triagem',
+                    'f.estado as estado_fila',
+                    't.hospital_id',
+                    't.criado_em as hora_entrada',
+                    'f.posicao'
+                )
+                ->where('f.estado', 'aguardar')
+                ->where('t.hospital_id', $hospital_id)
+                ->orderByRaw("CASE 
+                    WHEN t.cor_manchester = 'vermelho' THEN 1 
+                    WHEN t.cor_manchester = 'laranja' THEN 2 
+                    WHEN t.cor_manchester = 'amarelo' THEN 3 
+                    WHEN t.cor_manchester = 'verde' THEN 4 
+                    ELSE 5 END")
+                ->orderBy('f.posicao', 'asc')
                 ->first();
 
             if ($proximo) {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Activity, ArrowLeft } from 'lucide-react';
 import { cancelarTriagem, iniciarTriagem, responderTriagem, statusTriagem, guardarResultadoTriagem } from '../services/triagemService';
 
 function mensagemFinal(resultado) {
@@ -58,7 +59,7 @@ function parseResultado(texto) {
   return { categoria, justificacao, acao };
 }
 
-export default function TriagemIA({ user }) {
+export default function TriagemIA({ user, onCancel }) {
   const [etapa, setEtapa] = useState('inicio');
   const [entrada, setEntrada] = useState('');
   const [sessionId, setSessionId] = useState('');
@@ -221,118 +222,144 @@ export default function TriagemIA({ user }) {
   };
 
   return (
-    <div className="p-6 md:p-10 bg-white rounded-3xl border border-slate-200 shadow-sm max-w-5xl mx-auto space-y-6">
-      <div className="space-y-3 text-center">
-        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">{titulo}</h1>
-        <p className="text-slate-500">A IA faz uma pergunta de cada vez até ter informação suficiente para classificar a triagem.</p>
-        {estadoServidor && (
-          <p className="text-xs uppercase tracking-[0.25em] text-slate-400 font-bold">
-            Servidor: {estadoServidor.status} · Sessões ativas: {estadoServidor.sessoes_ativas}
-          </p>
-        )}
-      </div>
+    <div className="pt-2 pb-6 px-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr_350px] gap-6 items-start max-w-[1600px] mx-auto">
+        
+        {/* CAIXA 1: INFORMAÇÕES (ESQUERDA) */}
+        <aside className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm flex flex-col justify-between lg:h-[calc(100vh-160px)]">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-blue-600 font-black uppercase text-[11px] tracking-widest">
+              <div className="w-1 h-3 bg-blue-600 rounded-full"></div>
+              Triagem Médica IA
+            </div>
+            
+            <div className="space-y-2">
+              <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-tight">
+                Questionário de Triagem IA
+              </h1>
+              <p className="text-slate-400 text-sm font-bold leading-tight">
+                Responda às questões para avaliarmos a sua prioridade clínica em tempo real.
+              </p>
+            </div>
+          </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-        <div className="space-y-4">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 min-h-96">
+          {estadoServidor && (
+            <div className="pt-4 mt-4 border-t border-slate-50 flex items-center justify-between">
+              <span className="text-[12px] font-black uppercase text-slate-300 tracking-widest">Servidor</span>
+              <div className="flex items-center gap-2 bg-green-50 px-2 py-1 rounded-full border border-green-100">
+                <div className="w-1 h-1 rounded-full bg-green-500"></div>
+                <span className="text-[11px] font-black text-green-600 uppercase">Online</span>
+              </div>
+            </div>
+          )}
+        </aside>
+
+        {/* CAIXA 2: HISTÓRICO DE CONVERSA (CENTRO) */}
+        <main className="bg-white rounded-[2rem] border border-slate-200 shadow-sm flex flex-col h-[400px] lg:h-[calc(100vh-160px)] overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
             {historico.length === 0 ? (
-              <div className="flex h-full min-h-72 flex-col items-center justify-center text-center text-slate-400">
-                <p className="text-lg font-bold text-slate-500">Aguardando sintomas iniciais</p>
-                <p className="mt-2 max-w-md">Escreva o que sente e a IA começa a entrevista automaticamente.</p>
+              <div className="h-full flex flex-col items-center justify-center text-center px-6">
+                <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 max-w-xs">
+                  <Activity size={32} className="text-slate-300 mx-auto mb-3" />
+                  <p className="text-base font-black text-slate-800 mb-1">Entrevista Clínica</p>
+                  <p className="text-slate-400 text-sm font-medium leading-tight">O seu histórico de conversação com a IA médica aparecerá aqui.</p>
+                </div>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {historico.map((mensagem, indice) => (
                   <div
                     key={`${mensagem.tipo}-${indice}`}
-                    className={`max-w-[85%] rounded-3xl px-4 py-3 shadow-sm whitespace-pre-wrap ${
-                      mensagem.tipo === 'utente'
-                        ? 'ml-auto bg-blue-600 text-white'
-                        : 'mr-auto bg-white text-slate-800 border border-slate-200'
+                    className={`max-w-[90%] ${
+                      mensagem.tipo === 'utente' ? 'ml-auto' : 'mr-auto'
                     }`}
                   >
-                    <p className="text-xs font-black uppercase tracking-widest opacity-70 mb-1">
-                      {mensagem.tipo === 'utente' ? 'Utilizador' : 'IA'}
-                    </p>
-                    <p className="leading-relaxed">{mensagem.texto}</p>
+                    <div className={`px-5 py-3 rounded-[1.5rem] shadow-sm font-medium text-base leading-relaxed ${
+                      mensagem.tipo === 'utente'
+                        ? 'bg-blue-600 text-white rounded-tr-none'
+                        : 'bg-slate-50 text-slate-700 border border-slate-100 rounded-tl-none'
+                    }`}>
+                      <p className={`text-[12px] font-black uppercase tracking-widest mb-1 ${
+                        mensagem.tipo === 'utente' ? 'text-blue-200' : 'text-slate-400'
+                      }`}>
+                        {mensagem.tipo === 'utente' ? 'Você' : 'Assistente IA'}
+                      </p>
+                      {mensagem.texto}
+                    </div>
                   </div>
                 ))}
+
+                {resultado && (
+                  <div className="pt-2">
+                    <div className="bg-slate-900 text-white rounded-[2rem] p-6 shadow-2xl space-y-3">
+                      <div className="inline-block bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                        Resultado Final
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-black tracking-tighter italic leading-none">
+                          {resultado.emoji} {resultado.cor}
+                        </h2>
+                      </div>
+                      <p className="text-slate-300 text-xs leading-relaxed italic font-medium border-l-2 border-blue-600 pl-4">
+                        "{resultado.resultado}"
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
+        </main>
 
-          {erro && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700 font-medium">
-              {erro}
-            </div>
-          )}
-
-          {resultado && (
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 space-y-3">
-              <div className="text-sm font-bold uppercase tracking-widest text-blue-600">Resultado Final</div>
-              <div className="text-2xl font-black text-slate-900">
-                {resultado.emoji ? `${resultado.emoji} ` : ''}
-                {resultado.cor || 'Resposta'}
-              </div>
-              <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{resultado.resultado}</p>
-            </div>
-          )}
-        </div>
-
-        <aside className="space-y-4">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-widest text-blue-600">{etapa === 'inicio' ? 'Primeira descrição' : 'Resposta seguinte'}</p>
-              <p className="mt-1 text-sm text-slate-500">
-                {etapa === 'inicio'
-                  ? 'Descreva os sintomas principais.'
-                  : 'Responda à pergunta da IA com o máximo de detalhe útil.'}
-              </p>
-            </div>
-
-            <form onSubmit={etapa === 'inicio' ? submeterInicio : submeterResposta} className="space-y-4">
-              <label className="block space-y-2">
-                <span className="text-sm font-bold text-slate-700">
-                  {etapa === 'inicio' ? 'Sintomas iniciais' : mensagemSistema || 'Resposta'}
-                </span>
+        {/* CAIXA 3: INTERAÇÃO E CONTROLOS (DIREITA) */}
+        <aside className="space-y-4 lg:h-[calc(100vh-160px)] flex flex-col">
+          
+          {/* INPUT BOX */}
+          <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm space-y-4 flex-1 flex flex-col min-h-0">
+             <form onSubmit={etapa === 'inicio' ? submeterInicio : submeterResposta} className="space-y-3 flex-1 flex flex-col min-h-0">
+              <div className="space-y-2 flex-1 flex flex-col min-h-0">
+                <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-2">
+                  Descreva o problema
+                </label>
                 <textarea
+                  autoFocus
                   value={entrada}
                   onChange={(event) => setEntrada(event.target.value)}
-                  placeholder={etapa === 'inicio' ? 'Ex.: febre, tosse, dor no peito...' : 'Escreva a sua resposta aqui...'}
-                  className="w-full min-h-36 rounded-2xl border border-slate-300 bg-slate-50 p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 resize-y"
+                  placeholder={etapa === 'inicio' ? 'Ex.: Sinto uma dor forte...' : 'Responda aqui...'}
+                  className="w-full flex-1 min-h-[100px] rounded-[1.5rem] border-2 border-slate-50 bg-slate-50/50 p-4 outline-none focus:border-blue-500 focus:bg-white transition-all font-medium resize-none text-sm text-slate-700 shadow-inner"
                 />
-              </label>
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="submit"
-                  disabled={aCarregar || !entrada.trim()}
-                  className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-6 py-3 font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {aCarregar ? 'A enviar...' : etapa === 'inicio' ? 'Iniciar triagem' : 'Responder'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={reiniciar}
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 font-bold text-slate-700 transition hover:bg-slate-50"
-                >
-                  Reiniciar
-                </button>
               </div>
+
+              <button
+                type="submit"
+                disabled={aCarregar || !entrada.trim()}
+                className="w-full inline-flex items-center justify-center rounded-[1.25rem] bg-blue-500 hover:bg-blue-600 py-4 font-black text-white transition-all shadow-lg shadow-blue-200 disabled:opacity-50 uppercase text-xs tracking-widest"
+              >
+                {aCarregar ? 'A analisar...' : 'Enviar'}
+              </button>
             </form>
+
+            <div className="text-center">
+              <button
+                onClick={reiniciar}
+                className="text-slate-400 hover:text-slate-600 font-black text-[10px] uppercase tracking-[0.2em] transition-colors"
+              >
+                Reiniciar
+              </button>
+            </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600 space-y-2">
-            <p className="font-bold text-slate-800">Fluxo</p>
-            <p>1. Descreva sintomas iniciais.</p>
-            <p>2. Responda uma pergunta de cada vez.</p>
-            <p>3. No fim, a IA devolve cor, justificação e ação recomendada.</p>
-            {sessionId && (
-              <p className="pt-2 text-xs uppercase tracking-widest text-slate-400 break-all">Session ID: {sessionId}</p>
-            )}
-          </div>
+          {/* EXIT BOX */}
+          <button
+            onClick={onCancel}
+            className="w-full bg-slate-100 hover:bg-white border border-slate-200 rounded-[1.25rem] p-4 flex items-center justify-center gap-3 transition-all group shadow-sm"
+          >
+            <ArrowLeft size={14} className="text-slate-400 group-hover:text-slate-900 transition-colors" />
+            <span className="text-[11px] font-black uppercase text-slate-400 group-hover:text-slate-900 tracking-widest">Sair</span>
+          </button>
+
         </aside>
+
       </div>
     </div>
   );

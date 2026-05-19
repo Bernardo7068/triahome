@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import UtenteDashboard from "./pages/UtenteDashboard";
 import MedicoDashboard from "./pages/MedicoDashboard";
 import SecretariaDashboard from "./pages/SecretariaDashboard";
+import EstatisticasClinicas from "./pages/EstatisticasClinicas";
 import AdminDashboard from "./pages/AdminDashboard"; // <-- Importamos o Dashboard do Admin
 import DebugLogin from "./pages/DebugLogin";
 
@@ -73,7 +74,10 @@ function App() {
                   <SecretariaDashboard user={user} />
                 } />
 
-                {/* ROTA DA SECRETARIA / TRIA-STAFF */}
+                {/* ROTA DA TRIAGEM: Apenas para Utentes */}
+                <Route path="/nova-triagem" element={
+                  user.role === "utente" ? <TriagemIA user={user} /> : <Navigate to="/" />
+                } />
                 <Route 
                   path="/secretaria" 
                   element={user?.role === 'secretaria' || user?.role === 'admin' ? 
