@@ -50,7 +50,7 @@ export default function MedicoDashboard({ user }) {
 
   const chamarProximo = async () => {
     try {
-      const hospitalId = user?.hospital_id || "";
+      const hospitalId = user?.hospital_id || 1;
       const res = await api.get(`/medico/proximo?hospital_id=${hospitalId}`);
       
       if (res.data && res.data.nome_utente) {
@@ -85,8 +85,23 @@ export default function MedicoDashboard({ user }) {
       setAbaAtiva("espera"); 
       carregarDados();
     } catch (e) { 
-      alert("Erro ao finalizar consulta."); 
+      console.error('Erro finalizarConsulta:', e);
+      const msg = e.response?.data?.message || e.message || 'Erro ao finalizar consulta.';
+      alert(msg);
     }
+  };
+
+  const calcularTempoEspera = (dataEntrada) => {
+    if (!dataEntrada) return "--";
+    const entrada = new Date(dataEntrada);
+    const diferencaMs = agora - entrada;
+    if (diferencaMs < 0) return "Agora";
+    const minutosTotais = Math.floor(diferencaMs / (1000 * 60));
+    
+    if (minutosTotais < 60) return `${minutosTotais} min`;
+    const horas = Math.floor(minutosTotais / 60);
+    const minutos = minutosTotais % 60;
+    return `${horas}h ${minutos}m`;
   };
 
   const ModalVisualizarRelatorio = ({ dados, onClose }) => (
@@ -284,11 +299,18 @@ export default function MedicoDashboard({ user }) {
       {/* POPUP DE PRÉ-DIAGNÓSTICO DA IA (Este fica interno porque é só para mostrar os sintomas na fila) */}
       {pacientePopup && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-12 rounded-[3.5rem] w-full max-w-lg relative text-center shadow-2xl">
-            <button onClick={() => setPacientePopup(null)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-900"><X /></button>
-            <BadgePrioridade cor={pacientePopup.cor_manchester}/>
-            <h2 className="text-4xl font-black mt-8 mb-6">{pacientePopup.nome_utente}</h2>
-            <p className="bg-blue-50 p-6 rounded-[2rem] italic">"{pacientePopup.resumo_ia}"</p>
+          <div className="bg-white p-12 rounded-[3.5rem] w-full max-w-lg relative text-center shadow-2xl animate-in zoom-in-95 duration-200">
+            <button onClick={() => setPacientePopup(null)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-900 bg-slate-100 p-2 rounded-full"><X size={20} /></button>
+            <div className="flex justify-center mb-6">
+                <BadgePrioridade cor={pacientePopup.cor_manchester}/>
+            </div>
+            <h2 className="text-3xl font-black mb-2">{pacientePopup.nome_utente}</h2>
+            <p className="text-sm font-mono text-slate-400 mb-8 uppercase tracking-widest">Tempo na fila: {calcularTempoEspera(pacientePopup.hora_entrada)}</p>
+            
+            <div className="text-left bg-slate-50 p-8 rounded-[2rem] border border-slate-100">
+                <p className="text-[10px] font-black uppercase text-blue-500 mb-3 tracking-widest">Pré-Diagnóstico</p>
+                <p className="text-slate-700 italic leading-relaxed text-base">" {pacientePopup.resumo_ia || "Nenhuma informação disponível."}"</p>
+            </div>
           </div>
         </div>
       )}

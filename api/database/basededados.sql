@@ -85,7 +85,7 @@ CREATE TABLE consultas (
     utente_id INTEGER REFERENCES utilizadores(id) ON DELETE SET NULL,
     hospital_id INTEGER REFERENCES hospitais(id),
     diagnostico TEXT,
-    prescricao TEXT
+    prescricao TEXT,
     data_consulta DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
