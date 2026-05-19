@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller {
@@ -13,7 +14,7 @@ class AuthController extends Controller {
     $user = User::where('email', $request->email)->first();
 
     // Debug
-    \Log::info('Login attempt', [
+    Log::info('Login attempt', [
         'email' => $request->email,
         'user_found' => $user ? 'sim' : 'nao',
         'user_id' => $user?->id
@@ -36,6 +37,7 @@ class AuthController extends Controller {
         'nome' => $user->nome,
         'email' => $user->email,
         'role' => $user->role,
+        'hospital_id' => $user->hospital_id,
         'nr_funcionario' => $user->nr_funcionario,
         'especialidade' => $user->especialidade,
         'nr_utente' => $user->nr_utente,
@@ -88,6 +90,7 @@ class AuthController extends Controller {
             'nome' => $user->nome,
             'email' => $user->email,
             'role' => $user->role,
+            'hospital_id' => $user->hospital_id,
             'nr_utente' => $user->nr_utente,
         ];
 

@@ -7,6 +7,7 @@ use App\Models\Triagem;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\Log;
 
 class TriagemController extends Controller {
 
@@ -81,7 +82,7 @@ class TriagemController extends Controller {
             ];
             $cor = $cor_mapa[$categoria] ?? 'verde';
             
-            \Log::info('Guardando triagem', [
+            Log::info('Guardando triagem', [
                 'utente_id' => $request->utente_id,
                 'categoria' => $request->categoria,
                 'cor_mapeada' => $cor
@@ -102,7 +103,7 @@ class TriagemController extends Controller {
                     'conselhos_autocuidado' => $request->acao,
                     'estado' => 'pendente'  // Muda de volta para pendente para secretaria ver
                 ]);
-                \Log::info('Triagem atualizada', ['triagem_id' => $triagem->id, 'estado' => 'pendente']);
+                Log::info('Triagem atualizada', ['triagem_id' => $triagem->id, 'estado' => 'pendente']);
             } else {
                 // Cria nova triagem
                 $triagem = Triagem::create([
@@ -114,7 +115,7 @@ class TriagemController extends Controller {
                     'conselhos_autocuidado' => $request->acao,
                     'estado' => 'pendente'  // Estado inicial para secretaria validar
                 ]);
-                \Log::info('Triagem criada', ['triagem_id' => $triagem->id, 'estado' => 'pendente']);
+                Log::info('Triagem criada', ['triagem_id' => $triagem->id, 'estado' => 'pendente']);
             }
 
             // Cria entrada na fila de espera (se não existir)
@@ -197,11 +198,28 @@ class TriagemController extends Controller {
         try {
             $hospital_id = $request->query('hospital_id'); // Recebido do Frontend
 
-            $proximo = DB::table('v_painel_medico')
-                ->where('estado_fila', 'aguardar')
-                ->where('hospital_id', $hospital_id) // FILTRO POR HOSPITAL
-                ->orderBy('nivel_prioridade', 'asc')
-                ->orderBy('posicao', 'asc')
+            if (!$hospital_id) {
+                return response()->json(['message' => 'hospital_id em falta'], 400);
+            }
+
+            $proximo = DB::table('fila_espera')
+                ->join('triagens', 'fila_espera.triagem_id', '=', 'triagens.id')
+                ->join('utilizadores', 'triagens.utente_id', '=', 'utilizadores.id')
+                ->select(
+                    'triagens.id as triagem_id',
+                    'triagens.utente_id',
+                    'utilizadores.nome as nome_utente',
+                    'triagens.cor_manchester',
+                    'triagens.resumo_ia',
+                    'triagens.estado as estado_triagem',
+                    'fila_espera.estado as estado_fila',
+                    'fila_espera.posicao',
+                    'triagens.hospital_id'
+                )
+                ->where('fila_espera.estado', 'aguardar')
+                ->where('fila_espera.hospital_id', $hospital_id)
+                ->orderBy('triagens.nivel_prioridade', 'asc')
+                ->orderBy('fila_espera.posicao', 'asc')
                 ->first();
 
             if ($proximo) {

@@ -13,7 +13,7 @@ export default function SecretariaDashboard({ user }) {
   const carregarFilas = async () => {
     try {
       // 2. Opcional Chaining (?) ajuda a não crashar se o user demorar a carregar
-      const hospitalId = user?.hospital_id || "";
+      const hospitalId = user?.hospital_id ?? 1;
       
       const resSec = await api.get(`/secretaria/fila?hospital_id=${hospitalId}`);
       setFila(resSec.data || []);

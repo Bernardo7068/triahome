@@ -14,7 +14,7 @@ export default function MedicoDashboard({ user }) {
 
   const carregarDados = async () => {
     try {
-      const hospitalId = user?.hospital_id || "";
+      const hospitalId = user?.hospital_id ?? 1;
       const userId = user?.id || "";
 
       // Filtra a fila para o hospital do médico
@@ -35,7 +35,7 @@ export default function MedicoDashboard({ user }) {
 
   const chamarProximo = async () => {
     try {
-      const hospitalId = user?.hospital_id || "";
+      const hospitalId = user?.hospital_id ?? 1;
       const res = await api.get(`/medico/proximo?hospital_id=${hospitalId}`);
       
       if (res.data && res.data.nome_utente) {
@@ -89,7 +89,7 @@ export default function MedicoDashboard({ user }) {
             <div><p className="text-[10px] uppercase text-slate-400 font-bold">Paciente</p><p className="font-black text-lg">{dados.nome_utente}</p></div>
             <div><p className="text-[10px] uppercase text-slate-400 font-bold">Data</p><p className="font-black text-lg">{new Date(dados.data_consulta).toLocaleDateString()}</p></div>
           </div>
-          <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 mb-8 space-y-6">
+          <div className="bg-slate-50 p-8 rounded-4xl border border-slate-100 mb-8 space-y-6">
             <div><p className="text-[10px] font-black text-blue-600 mb-2 uppercase italic tracking-widest">Diagnóstico</p><p className="text-base font-medium leading-relaxed">"{dados.diagnostico}"</p></div>
             <div><p className="text-[10px] font-black text-green-600 mb-2 uppercase italic tracking-widest">Prescrição</p><p className="text-base font-medium leading-relaxed">"{dados.prescricao}"</p></div>
           </div>
@@ -241,7 +241,7 @@ export default function MedicoDashboard({ user }) {
             <button onClick={() => setPacientePopup(null)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-900"><X /></button>
             <BadgePrioridade cor={pacientePopup.cor_manchester}/>
             <h2 className="text-4xl font-black mt-8 mb-6">{pacientePopup.nome_utente}</h2>
-            <p className="bg-blue-50 p-6 rounded-[2rem] italic">"{pacientePopup.resumo_ia}"</p>
+            <p className="bg-blue-50 p-6 rounded-4xl italic">"{pacientePopup.resumo_ia}"</p>
           </div>
         </div>
       )}
