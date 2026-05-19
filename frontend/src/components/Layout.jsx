@@ -7,7 +7,7 @@ export default function Layout({ children, user, onLogout }) {
       <Navbar user={user} onLogout={onLogout} />
       
       {/* Conteúdo da página */}
-      <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-500">
+      <main className="flex-1 w-full max-w-[1400px] mx-auto p-4 md:p-10 animate-in fade-in duration-500">
         {children}
       </main>
 
