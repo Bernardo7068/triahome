@@ -78,6 +78,16 @@ function App() {
                 <Route path="/nova-triagem" element={
                   user.role === "utente" ? <TriagemIA user={user} /> : <Navigate to="/" />
                 } />
+                <Route
+                  path="/estatisticas"
+                  element={
+                    user.role === "medico" || user.role === "secretaria" || user.role === "admin" ? (
+                      <EstatisticasClinicas user={user} />
+                    ) : (
+                      <Navigate to="/" />
+                    )
+                  }
+                />
                 <Route 
                   path="/secretaria" 
                   element={user?.role === 'secretaria' || user?.role === 'admin' ? 
