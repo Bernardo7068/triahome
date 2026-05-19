@@ -49,9 +49,9 @@ class HospitalController extends Controller {
         }
     }
 
-    public function getLotacao() {
-        // Usa a VIEW de lotação
-        return DB::select("SELECT * FROM v_lotacao_hospitais");
+public function getLotacao() {
+        // Em vez da VIEW que não existe, vamos buscar os dados diretamente à tabela 'hospitais'
+        return DB::table('hospitais')->get();
     }
 
     public function chamarUtente(Request $request, $triagem_id) {

@@ -49,55 +49,114 @@ class AuthController extends Controller {
     ]);
 }
 
-    public function register(Request $request) 
+public function register(Request $request) 
     {
-        // Valida os campos obrigatórios
+        // 1. Valida os campos do Utente
         try {
             $validated = $request->validate([
                 'nome' => 'required|string|max:255',
                 'email' => 'required|email|unique:utilizadores,email',
                 'password' => 'required|string|min:6',
-                'role' => 'required|in:utente,secretaria,medico,admin',
-                'nr_utente' => 'nullable|unique:utilizadores,nr_utente',
-                'nr_identificacao' => 'nullable|string|max:20',
+                // Campos específicos do Utente:
+                'nr_utente' => 'required|string|max:20|unique:utilizadores,nr_utente',
+                'hospital_id' => 'required|exists:hospitais,id'
+            ], [
+                'email.unique' => 'Este email já está registado.',
+                'nr_utente.unique' => 'Este Número de Utente já existe no sistema.',
+                'hospital_id.exists' => 'O hospital selecionado não é válido.'
             ]);
-        } catch (ValidationException $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'message' => 'Erro na validação',
                 'errors' => $e->errors()
             ], 422);
         }
 
-        // Por segurança, força que o registo via API seja sempre "utente"
-        // (Médicos, Secretarias, Admins devem ser criados manualmente por admin)
-        $role = $request->input('role', 'utente');
-        if ($role !== 'utente') {
-            $role = 'utente'; // Force sempre para utente
-        }
-
-        // Cria novo utilizador
+        // 2. Criação do Utente (A role é FORÇADA a 'utente' por segurança)
         $user = User::create([
             'nome' => $validated['nome'],
             'email' => $validated['email'],
             'password_hash' => Hash::make($validated['password']),
-            'role' => $role,
-            'nr_utente' => $validated['nr_utente'] ?? null,
+            'role' => 'utente', // Bloqueio de segurança anti-hackers
+            'nr_utente' => $validated['nr_utente'],
+            'hospital_id' => $validated['hospital_id'],
         ]);
 
-        // Devolve o utilizador criado (sem exposição de password)
-        $userData = [
+        return response()->json([
+            'message' => 'Utente registado com sucesso',
+            'user' => [
+                'id' => $user->id,
+                'nome' => $user->nome,
+                'email' => $user->email,
+                'role' => $user->role,
+                'hospital_id' => $user->hospital_id,
+            ],
+            'token' => 'token-simulado'
+        ], 201);
+    }
+
+    public function editarPerfil(Request $request, $id) 
+{
+    // 1. Procura o utilizador na base de dados
+    $user = User::find($id);
+
+    if (!$user) {
+        return response()->json(['message' => 'Utilizador não encontrado.'], 404);
+    }
+
+    // 2. Validação dos dados (incluindo os novos campos médicos)
+    try {
+        $validated = $request->validate([
+            'nome' => 'required|string|max:255',
+            'email' => 'required|email|unique:utilizadores,email,' . $id, // Permite manter o próprio email
+            'idade' => 'nullable|integer|min:0|max:120',
+            'altura' => 'nullable|integer|min:0|max:250',
+            'morada' => 'nullable|string|max:500',
+            'hospital_id' => 'nullable|exists:hospitais,id',
+            'descricao' => 'nullable|string',
+            'password' => 'nullable|string|min:6', // Password é opcional na edição
+        ], [
+            'email.unique' => 'Este e-mail já está em uso por outro utilizador.',
+            'password.min' => 'A nova palavra-passe deve ter pelo menos 6 caracteres.'
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'message' => 'Erro na validação dos dados.',
+            'errors' => $e->errors()
+        ], 422);
+    }
+
+    // 3. Atualiza os campos na tabela
+    $user->nome = $validated['nome'];
+    $user->email = $validated['email'];
+    $user->idade = $validated['idade'] ?? $user->idade;
+    $user->altura = $validated['altura'] ?? $user->altura;
+    $user->morada = $validated['morada'] ?? $user->morada;
+    $user->hospital_id = $validated['hospital_id'] ?? $user->hospital_id;
+    $user->descricao = $validated['descricao'] ?? $user->descricao;
+
+    // Se o utilizador digitou uma nova password, fazemos o hash dela antes de guardar
+    if (!empty($validated['password'])) {
+        $user->password_hash = Hash::make($validated['password']);
+    }
+
+    $user->save();
+
+    // 4. Devolve o utilizador atualizado de volta para o React sincronizar o estado
+    return response()->json([
+        'message' => 'Perfil clínico atualizado com sucesso!',
+        'user' => [
             'id' => $user->id,
             'nome' => $user->nome,
             'email' => $user->email,
             'role' => $user->role,
             'hospital_id' => $user->hospital_id,
             'nr_utente' => $user->nr_utente,
-        ];
-
-        return response()->json([
-            'message' => 'Utilizador registado com sucesso',
-            'user' => $userData,
-            'token' => 'token-simulado'
-        ], 201);
-    }
+            'idade' => $user->idade,
+            'altura' => $user->altura,
+            'morada' => $user->morada,
+            'descricao' => $user->descricao,
+        ]
+    ]);
+}
 }

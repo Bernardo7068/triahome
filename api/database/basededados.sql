@@ -44,6 +44,10 @@ CREATE TABLE utilizadores (
     especialidade TEXT,
     hospital_id INTEGER REFERENCES hospitais(id) ON DELETE SET NULL,
     ativo INTEGER NOT NULL DEFAULT 1,
+    idade INTEGER,
+    altura INTEGER,
+    morada TEXT,
+    descricao TEXT
     criado_em TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 

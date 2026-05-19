@@ -5,7 +5,7 @@ import Layout from "./components/Layout";
 import UtenteDashboard from "./pages/UtenteDashboard";
 import MedicoDashboard from "./pages/MedicoDashboard";
 import SecretariaDashboard from "./pages/SecretariaDashboard";
-import TriagemIA from "./pages/TriagemIA";
+import AdminDashboard from "./pages/AdminDashboard"; // <-- Importamos o Dashboard do Admin
 import DebugLogin from "./pages/DebugLogin";
 
 function App() {
@@ -13,6 +13,9 @@ function App() {
     const savedUser = sessionStorage.getItem("tria_user");
     return savedUser ? JSON.parse(savedUser) : null;
   });
+
+  // ESTADO GLOBAL DO MODAL: Controla a abertura da Ficha Clínica / Perfil
+  const [modalPerfilAberto, setModalPerfilAberto] = useState(false);
 
   console.log("👤 User state atual:", user); // Debug
 
@@ -22,9 +25,16 @@ function App() {
     sessionStorage.setItem("tria_user", JSON.stringify(userData));
   };
 
+  // Garante que, ao atualizar os dados do perfil, eles também ficam guardados no sessionStorage
+  const handleUpdateUser = (updatedUserData) => {
+    setUser(updatedUserData);
+    sessionStorage.setItem("tria_user", JSON.stringify(updatedUserData));
+  };
+
   const handleLogout = () => {
     setUser(null);
     sessionStorage.removeItem("tria_user");
+    setModalPerfilAberto(false); // Fecha o modal se estiver aberto ao sair
   };
 
   return (
@@ -38,28 +48,39 @@ function App() {
           <Route path="*" element={<Login onLoginSuccess={handleLoginSuccess} />} />
         ) : (
           /* SE HÁ USER: Entra no Layout Protegido */
+          /* Injetamos a função onEditarClick no Layout para passar à Navbar */
           <Route path="*" element={
-            <Layout user={user} onLogout={handleLogout}>
+            <Layout 
+              user={user} 
+              onLogout={handleLogout} 
+              onUpdateUser={handleUpdateUser}
+              onEditarClick={() => setModalPerfilAberto(true)} 
+            >
               <Routes>
                 {/* ROTA PRINCIPAL: Decide o dashboard pelo Role */}
                 <Route path="/" element={
-                  user.role === "utente" ? <UtenteDashboard user={user} /> :
+                  user.role === "utente" ? (
+                    <UtenteDashboard 
+                      user={user} 
+                      onUpdateUser={handleUpdateUser}
+                      modalPerfilAberto={modalPerfilAberto}
+                      setModalPerfilAberto={setModalPerfilAberto}
+                    />
+                  ) :
                   user.role === "medico" ? <MedicoDashboard user={user} /> :
                   user.role === "secretaria" ? <SecretariaDashboard user={user} /> :
+                  user.role === "admin" ? <AdminDashboard user={user} /> :
                   <SecretariaDashboard user={user} />
                 } />
 
-                {/* ROTA DA TRIAGEM: Apenas para Utentes */}
-                <Route path="/nova-triagem" element={
-                  user.role === "utente" ? <TriagemIA user={user} /> : <Navigate to="/" />
-                } />
+                {/* ROTA DA SECRETARIA / TRIA-STAFF */}
                 <Route 
-  path="/secretaria" 
-  element={user?.role === 'secretaria' || user?.role === 'admin' ? 
-    <SecretariaDashboard user={user} /> : // <--- ESTA PARTE É CRUCIAL
-    <Navigate to="/" />
-  } 
-/>
+                  path="/secretaria" 
+                  element={user?.role === 'secretaria' || user?.role === 'admin' ? 
+                    <SecretariaDashboard user={user} /> : 
+                    <Navigate to="/" />
+                  } 
+                />
 
                 {/* FALLBACK: Se houver erro de rota, volta ao início */}
                 <Route path="*" element={<Navigate to="/" />} />

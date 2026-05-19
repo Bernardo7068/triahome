@@ -35,3 +35,5 @@ Route::get('/secretaria/fila', [TriagemController::class, 'filaSecretaria']);
 Route::get('/admin/utilizadores', [AdminController::class, 'listarUtilizadores']);
 Route::get('/admin/hospitais', [AdminController::class, 'listarHospitais']);
 Route::post('/admin/utilizadores/novo', [AdminController::class, 'criarUtilizador']);
+Route::put('/utilizadores/editar/{id}', [AuthController::class, 'editarPerfil']);
+Route::put('/admin/utilizadores/editar/{id}', [AdminController::class, 'editarUtilizador']);
