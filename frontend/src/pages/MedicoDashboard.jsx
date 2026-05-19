@@ -129,8 +129,6 @@ export default function MedicoDashboard({ user }) {
       }
   };
 
-  const listaEspera = fila.filter(p => p.estado_fila === 'aguardar');
-  const listaGeral = fila;
 
   return (
     <div className="space-y-6">
