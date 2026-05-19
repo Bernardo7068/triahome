@@ -148,7 +148,7 @@ export default function MedicoDashboard({ user }) {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* MENU */}
       <div className="flex flex-wrap gap-4 mb-6 bg-white p-2 rounded-3xl shadow-sm border">
         <button onClick={() => setAbaAtiva("espera")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'espera' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
@@ -168,133 +168,169 @@ export default function MedicoDashboard({ user }) {
             <AlertCircle size={20} className={abaAtiva !== 'consulta' ? "animate-pulse" : ""}/> Em Consulta
           </button>
         )}
+      <div className="flex flex-col xl:flex-row gap-4 mb-6 bg-white p-2 rounded-3xl shadow-sm border">
+        <div className="flex flex-1 gap-4">
+          <button onClick={() => setAbaAtiva("espera")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'espera' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
+            <Clock size={20}/> <span className="hidden sm:inline">Sala de</span> Espera ({listaEspera.length})
+          </button>
+          <button onClick={() => setAbaAtiva("geral")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'geral' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
+            <LayoutDashboard size={20}/> <span className="hidden sm:inline">Visão</span> Geral ({listaGeral.length})
+          </button>
+        </div>
+        <div className="flex flex-1 gap-4">
+          <button onClick={() => setAbaAtiva("historico")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'historico' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
+            <History size={20}/> <span className="hidden sm:inline">Atendimentos</span> ({historico.length})
+          </button>
+          {consultaAtiva && (
+            <button onClick={() => setAbaAtiva("consulta")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'consulta' ? 'bg-red-500 text-white shadow-lg' : 'bg-red-50 text-red-500 border border-red-200'}`}>
+              <AlertCircle size={20} className={abaAtiva !== 'consulta' ? "animate-pulse" : ""}/> <span className="hidden sm:inline">Em</span> Consulta
+            </button>
+          )}
+        </div>
       </div>
 
       {/* SALA DE ESPERA */}
       {abaAtiva === "espera" && (
         <div className="space-y-6 animate-in fade-in duration-300">
-          <div className="bg-white p-8 rounded-[2.5rem] border flex justify-between items-center shadow-sm">
-            <h2 className="text-2xl font-black flex items-center gap-2 tracking-tighter"><Stethoscope className="text-blue-600"/> Próximos Pacientes</h2>
-            <button onClick={chamarProximo} disabled={listaEspera.length === 0 || consultaAtiva} className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-900 disabled:opacity-50 transition-all flex items-center gap-2">
+          <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
+            <h2 className="text-xl md:text-2xl font-black flex items-center gap-2 tracking-tighter"><Stethoscope className="text-blue-600"/> Próximos Pacientes</h2>
+            <button onClick={chamarProximo} disabled={listaEspera.length === 0 || consultaAtiva} className="w-full md:w-auto bg-blue-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-900 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
               <Play fill="currentColor" size={18}/> Chamar Próximo
             </button>
           </div>
-          <div className="bg-white rounded-[2.5rem] border overflow-hidden shadow-sm">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 text-[10px] font-black uppercase text-slate-400 border-b">
-                <tr>
-                  <th className="p-6">Prioridade</th>
-                  <th className="p-6">Utente</th>
-                  <th className="p-6">Tempo Espera</th>
-                  <th className="p-6 text-right">Diagnóstico</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {listaEspera.map((p, i) => (
-                  <tr key={i} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-6"><BadgePrioridade cor={p.cor_manchester} /></td>
-                    <td className="p-6 font-bold text-slate-700">{p.nome_utente}</td>
-                    <td className="p-6 font-mono text-sm text-slate-500 flex items-center gap-2 mt-2">
-                        <Timer size={16} className="text-slate-400" /> 
-                        {calcularTempoEspera(p.hora_entrada)}
-                    </td>
-                    <td className="p-6 text-right">
-                      <button onClick={() => setPacientePopup(p)} className="bg-blue-50 text-blue-600 p-3 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm">
-                        <Eye size={20}/>
-                      </button>
-                    </td>
+          <div className="bg-white rounded-[2.5rem] border shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left min-w-[600px]">
+                <thead className="bg-slate-50 text-[10px] font-black uppercase text-slate-400 border-b">
+                  <tr>
+                    <th className="p-6">Prioridade</th>
+                    <th className="p-6">Utente</th>
+                    <th className="p-6">Tempo Espera</th>
+                    <th className="p-6 text-right">Diagnóstico</th>
                   </tr>
-                ))}
-                {listaEspera.length === 0 && (
-                  <tr><td colSpan={4} className="p-16 text-center text-slate-400 font-medium italic">A sala de espera está vazia.</td></tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {listaEspera.map((p, i) => (
+                    <tr key={i} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-6"><BadgePrioridade cor={p.cor_manchester} /></td>
+                      <td className="p-6 font-bold text-slate-700">{p.nome_utente}</td>
+                      <td className="p-6 font-mono text-sm text-slate-500">
+                          <div className="flex items-center gap-2">
+                            <Timer size={16} className="text-slate-400" /> 
+                            {calcularTempoEspera(p.hora_entrada)}
+                          </div>
+                      </td>
+                      <td className="p-6 text-right">
+                        <button onClick={() => setPacientePopup(p)} className="bg-blue-50 text-blue-600 p-3 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                          <Eye size={20}/>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {listaEspera.length === 0 && (
+                    <tr><td colSpan={4} className="p-16 text-center text-slate-400 font-medium italic">A sala de espera está vazia.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
       {/* VISÃO GERAL */}
       {abaAtiva === "geral" && (
-        <div className="bg-white rounded-[2.5rem] border overflow-hidden shadow-sm animate-in fade-in duration-300">
+        <div className="bg-white rounded-[2.5rem] border shadow-sm overflow-hidden animate-in fade-in duration-300">
           <div className="p-8 border-b bg-slate-50">
               <h2 className="font-black text-xl italic tracking-tighter uppercase text-slate-800">Estado Global do Hospital</h2>
           </div>
-          <table className="w-full text-left">
-              <thead className="bg-white text-[10px] font-black uppercase text-slate-400 border-b">
-                  <tr>
-                    <th className="p-6">Prioridade</th>
-                    <th className="p-6">Paciente</th>
-                    <th className="p-6">Tempo Espera</th>
-                    <th className="p-6 text-center">Diagnóstico</th>
-                    <th className="p-6 text-right">Estado Atual</th>
-                  </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                  {listaGeral.map((p, i) => (
-                      <tr key={i} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-6"><BadgePrioridade cor={p.cor_manchester} /></td>
-                          <td className="p-6 font-bold text-slate-700">{p.nome_utente}</td>
-                          <td className="p-6 font-mono text-xs text-slate-500">{calcularTempoEspera(p.hora_entrada)}</td>
-                          <td className="p-6 text-center">
-                              <button onClick={() => setPacientePopup(p)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-lg">
-                                  <Eye size={16}/>
-                              </button>
-                          </td>
-                          <td className="p-6 text-right">{formatarEstado(p.estado_fila, p.estado_triagem)}</td>
-                      </tr>
-                  ))}
-                  {listaGeral.length === 0 && (
-                      <tr><td colSpan={5} className="p-16 text-center text-slate-400 font-medium italic border-dashed border-2 m-4 rounded-3xl">Não há movimento no hospital.</td></tr>
-                  )}
-              </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-[800px]">
+                <thead className="bg-white text-[10px] font-black uppercase text-slate-400 border-b">
+                    <tr>
+                      <th className="p-6">Prioridade</th>
+                      <th className="p-6">Paciente</th>
+                      <th className="p-6">Tempo Espera</th>
+                      <th className="p-6 text-center">Diagnóstico</th>
+                      <th className="p-6 text-right">Estado Atual</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    {listaGeral.map((p, i) => (
+                        <tr key={i} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-6"><BadgePrioridade cor={p.cor_manchester} /></td>
+                            <td className="p-6 font-bold text-slate-700">{p.nome_utente}</td>
+                            <td className="p-6 font-mono text-xs text-slate-500">{calcularTempoEspera(p.hora_entrada)}</td>
+                            <td className="p-6 text-center">
+                                <button onClick={() => setPacientePopup(p)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-lg">
+                                    <Eye size={16}/>
+                                </button>
+                            </td>
+                            <td className="p-6 text-right">{formatarEstado(p.estado_fila, p.estado_triagem)}</td>
+                        </tr>
+                    ))}
+                    {listaGeral.length === 0 && (
+                        <tr><td colSpan={5} className="p-16 text-center text-slate-400 font-medium italic">Não há movimento no hospital.</td></tr>
+                    )}
+                </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* HISTÓRICO */}
       {abaAtiva === "historico" && (
-        <div className="bg-white rounded-[2.5rem] border overflow-hidden shadow-sm animate-in fade-in duration-300">
+        <div className="bg-white rounded-[2.5rem] border shadow-sm overflow-hidden animate-in fade-in duration-300">
           <div className="p-8 border-b bg-slate-50"><h2 className="font-black text-xl italic tracking-tighter uppercase">Histórico</h2></div>
-          <table className="w-full text-left">
-              <thead className="bg-white text-[10px] font-black uppercase text-slate-400 border-b">
-                <tr><th className="p-6">Data</th><th className="p-6">Paciente</th><th className="p-6 text-right">Ver Relatório</th></tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                  {historico.map((h, i) => (
-                      <tr key={i} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-6 text-xs font-mono">{new Date(h.data_consulta).toLocaleDateString()}</td>
-                          <td className="p-6 font-bold">{h.nome_utente}</td>
-                          <td className="p-6 text-right"><button onClick={() => setRelatorioParaVer(h)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-all"><Eye size={20}/></button></td>
-                      </tr>
-                  ))}
-              </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-[500px]">
+                <thead className="bg-white text-[10px] font-black uppercase text-slate-400 border-b">
+                  <tr><th className="p-6">Data</th><th className="p-6">Paciente</th><th className="p-6 text-right">Ver Relatório</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    {historico.map((h, i) => (
+                        <tr key={i} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-6 text-xs font-mono">{new Date(h.data_consulta).toLocaleDateString()}</td>
+                            <td className="p-6 font-bold">{h.nome_utente}</td>
+                            <td className="p-6 text-right"><button onClick={() => setRelatorioParaVer(h)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-all"><Eye size={20}/></button></td>
+                        </tr>
+                    ))}
+                    {historico.length === 0 && (
+                        <tr><td colSpan={3} className="p-16 text-center text-slate-400 font-medium italic">Sem atendimentos registados.</td></tr>
+                    )}
+                </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* CONSULTA ATIVA */}
       {abaAtiva === "consulta" && consultaAtiva && (
-        <div className="bg-white rounded-[3rem] shadow-2xl border overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
-          <div className="bg-slate-900 text-white p-10 flex justify-between items-center">
-            <div className="flex items-center gap-6">
-              <div className="bg-white/10 p-5 rounded-3xl"><User size={40}/></div>
+        <div className="bg-white rounded-[3rem] shadow-2xl border overflow-hidden animate-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto">
+          <div className="bg-slate-900 text-white p-6 md:p-10 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-6 w-full">
+              <div className="bg-white/10 p-5 rounded-3xl hidden sm:block"><User size={40}/></div>
               <div>
-                <h3 className="text-4xl font-black tracking-tighter italic">{consultaAtiva.nome_utente}</h3>
+                <h3 className="text-2xl md:text-4xl font-black tracking-tighter italic">{consultaAtiva.nome_utente}</h3>
                 <div className="flex gap-2 mt-2">
                     <BadgePrioridade cor={consultaAtiva.cor_manchester}/>
                 </div>
               </div>
             </div>
-            <div className="max-w-xs text-right">
+            <div className="w-full md:max-w-xs text-left md:text-right">
                 <p className="text-[10px] font-black uppercase text-blue-400 mb-1 tracking-widest">Queixa Principal</p>
                 <p className="text-sm italic opacity-80 leading-relaxed font-medium">"{consultaAtiva.resumo_ia}"</p>
             </div>
           </div>
-          <div className="p-10 space-y-8">
-            <textarea className="w-full p-8 bg-slate-50 border-2 rounded-[2.5rem] h-32 outline-none focus:border-blue-600" placeholder="Diagnóstico..." value={relatorio.diagnostico} onChange={e => setRelatorio({...relatorio, diagnostico: e.target.value})} />
-            <textarea className="w-full p-8 bg-slate-50 border-2 rounded-[2.5rem] h-32 outline-none focus:border-green-600" placeholder="Prescrição..." value={relatorio.prescricao} onChange={e => setRelatorio({...relatorio, prescricao: e.target.value})} />
-            <button onClick={finalizarConsulta} className="w-full bg-green-600 text-white py-6 rounded-[2.5rem] font-black text-2xl hover:bg-slate-900 transition-all flex items-center justify-center gap-4">
+          <div className="p-6 md:p-10 space-y-8">
+            <div className="space-y-4">
+              <label className="text-xs font-black uppercase text-slate-400 tracking-widest ml-4">Diagnóstico Clínico</label>
+              <textarea className="w-full p-6 md:p-8 bg-slate-50 border-2 rounded-[2.5rem] h-32 md:h-40 outline-none focus:border-blue-600 transition-all" placeholder="Escreva aqui o diagnóstico..." value={relatorio.diagnostico} onChange={e => setRelatorio({...relatorio, diagnostico: e.target.value})} />
+            </div>
+            <div className="space-y-4">
+              <label className="text-xs font-black uppercase text-slate-400 tracking-widest ml-4">Prescrição e Recomendações</label>
+              <textarea className="w-full p-6 md:p-8 bg-slate-50 border-2 rounded-[2.5rem] h-32 md:h-40 outline-none focus:border-green-600 transition-all" placeholder="Escreva aqui a medicação e cuidados..." value={relatorio.prescricao} onChange={e => setRelatorio({...relatorio, prescricao: e.target.value})} />
+            </div>
+            <button onClick={finalizarConsulta} className="w-full bg-green-600 text-white py-6 rounded-[2.5rem] font-black text-xl md:text-2xl hover:bg-slate-900 transition-all shadow-xl shadow-green-100 flex items-center justify-center gap-4">
               <Send size={24}/> Finalizar Atendimento
             </button>
           </div>

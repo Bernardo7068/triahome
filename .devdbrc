@@ -6,5 +6,9 @@
   {
     "type": "sqlite",
     "path": "c:\\Users\\marti\\Desktop\\ESS\\projeto-website\\triahome\\api\\database\\database.sqlite"
+  },
+  {
+    "type": "sqlite",
+    "path": "c:\\Users\\fabio\\Desktop\\Nova pasta (5)\\triahome\\api\\database\\database.sqlite"
   }
 ]
