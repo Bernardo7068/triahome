@@ -1,5 +1,5 @@
 // Prefer environment variable for remote triagem service, fallback to localhost
-const BASE_URL = import.meta.env.VITE_TRIAGEM_URL || 'http://127.0.0.1:5000';
+const BASE_URL = import.meta.env.VITE_TRIAGEM_URL || 'http://192.168.67.251:5000';
 
 async function requestJson(path, body) {
   const res = await fetch(`${BASE_URL}${path}`, {
