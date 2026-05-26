@@ -9,13 +9,78 @@ use App\Models\User;
 
 class AdminController extends Controller
 {
-    // Listar todos os utilizadores com o nome do hospital
-    public function listarUtilizadores() {
-        return DB::table('utilizadores as u')
+    // Resumo para o dashboard (contadores)
+    public function resumoDashboard(Request $request) {
+        $query = DB::table('utilizadores');
+        if ($request->has('hospital_id')) {
+            $query->where('hospital_id', $request->hospital_id);
+        }
+        $totais = $query->select('role', DB::raw('count(*) as total'))
+            ->groupBy('role')
+            ->pluck('total', 'role');
+        return response()->json($totais);
+    }
+
+    // Listar todos os utilizadores com paginação e pesquisa
+    public function listarUtilizadores(Request $request) {
+        $query = DB::table('utilizadores as u')
             ->leftJoin('hospitais as h', 'u.hospital_id', '=', 'h.id')
-            ->select('u.*', 'h.nome as hospital_nome')
-            ->orderBy('u.role', 'asc')
-            ->get();
+            ->select('u.*', 'h.nome as hospital_nome');
+
+        if ($request->has('hospital_id')) {
+            $query->where('u.hospital_id', $request->hospital_id);
+        }
+
+        // Filtro por role
+        if ($request->has('role') && !empty($request->role) && $request->role !== 'todos') {
+            if ($request->role === 'medico') {
+                $query->whereIn('u.role', ['medico', 'diretor']);
+            } else {
+                $query->where('u.role', $request->role);
+            }
+        }
+
+        // Pesquisa global
+        if ($request->has('search') && !empty($request->search)) {
+            $search = strtolower($request->search);
+            $query->where(function($q) use ($search) {
+                $q->whereRaw('LOWER(u.nome) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(u.email) LIKE ?', ["%{$search}%"])
+                  ->orWhere('u.nr_utente', 'LIKE', "%{$search}%")
+                  ->orWhere('u.nr_funcionario', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Retorna 15 por página
+        return response()->json($query->orderBy('u.criado_em', 'desc')->paginate(15));
+    }
+
+    // Listar Auditoria com paginação
+    public function listarAuditoria(Request $request) {
+        $query = DB::table('auditoria_acessos as a')
+            ->join('utilizadores as u', 'a.user_id', '=', 'u.id')
+            ->select('a.*', 'u.nome as autor_nome', 'u.role as autor_role');
+
+        return response()->json($query->orderBy('a.criado_em', 'desc')->paginate(20));
+    }
+
+    // Registar Auditoria (Chamado pelo Frontend ou internamente)
+    public function registarAuditoria(Request $request) {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:utilizadores,id',
+            'acao' => 'required|string|max:255',
+            'detalhes' => 'nullable|string|max:255'
+        ]);
+
+        DB::table('auditoria_acessos')->insert([
+            'user_id' => $validated['user_id'],
+            'acao' => $validated['acao'],
+            'detalhes' => $validated['detalhes'],
+            'ip_address' => $request->ip(),
+            'criado_em' => now()
+        ]);
+
+        return response()->json(['message' => 'Auditoria registada.']);
     }
 
     // Listar todos os hospitais
@@ -30,9 +95,9 @@ class AdminController extends Controller
             'nome' => 'required|string|max:255',
             'email' => 'required|email|unique:utilizadores,email',
             'password' => 'required|string|min:6',
-            'role' => 'required|in:utente,secretaria,medico,admin', 
+            'role' => 'required|in:utente,secretaria,medico,admin,diretor', 
             'hospital_id' => 'required|exists:hospitais,id',
-            'nr_funcionario' => 'required_if:role,medico,secretaria|nullable|string|unique:utilizadores,nr_funcionario',
+            'nr_funcionario' => 'required_if:role,medico,secretaria,diretor|nullable|string|unique:utilizadores,nr_funcionario',
             'especialidade' => 'nullable|string'
         ], [
             'email.unique' => 'Este e-mail já está em uso.',
@@ -45,14 +110,13 @@ class AdminController extends Controller
             'password_hash' => Hash::make($validated['password']),
             'role' => $validated['role'],
             'hospital_id' => $validated['hospital_id'],
-            'nr_funcionario' => ($validated['role'] !== 'admin' && $validated['role'] !== 'utente') ? $validated['nr_funcionario'] : null,
-            'especialidade' => $validated['role'] === 'medico' ? $validated['especialidade'] : null,
-            // Injeta valores padrão para utentes novos
-            'nr_utente' => "",
-            'idade' => 0,
-            'altura' => 0,
-            'morada' => "",
-            'descricao' => ""
+            'nr_funcionario' => ($validated['role'] !== 'admin' && $validated['role'] !== 'utente') ? ((isset($validated['nr_funcionario']) && $validated['nr_funcionario'] !== '') ? $validated['nr_funcionario'] : null) : null,
+            'especialidade' => ($validated['role'] === 'medico' || $validated['role'] === 'diretor') ? ((isset($validated['especialidade']) && $validated['especialidade'] !== '') ? $validated['especialidade'] : null) : null,
+            'nr_utente' => null,
+            'idade' => null,
+            'altura' => null,
+            'morada' => null,
+            'descricao' => null
         ]);
         
         return response()->json([
@@ -74,7 +138,7 @@ class AdminController extends Controller
         $validated = $request->validate([
             'nome' => 'required|string|max:255',
             'email' => 'required|email|unique:utilizadores,email,' . $id,
-            'role' => 'required|in:utente,secretaria,medico,admin',
+            'role' => 'required|in:utente,secretaria,medico,admin,diretor',
             'hospital_id' => 'required|exists:hospitais,id',
             // Campos específicos de staff
             'nr_funcionario' => 'nullable|string|unique:utilizadores,nr_funcionario,' . $id,
@@ -96,24 +160,23 @@ class AdminController extends Controller
 
         // Se for Utente, guarda dados clínicos
         if ($validated['role'] === 'utente') {
-            $user->nr_utente = $validated['nr_utente'] ?? "";
-            $user->idade = $validated['idade'] ?? 0;
-            $user->altura = $validated['altura'] ?? 0;
-            $user->morada = $validated['morada'] ?? "";
-            $user->descricao = $validated['descricao'] ?? ""; // Se vazio, envia texto limpo
+            $user->nr_utente = (isset($validated['nr_utente']) && $validated['nr_utente'] !== '') ? $validated['nr_utente'] : null;
+            $user->idade = (isset($validated['idade']) && $validated['idade'] !== '') ? $validated['idade'] : null;
+            $user->altura = (isset($validated['altura']) && $validated['altura'] !== '') ? $validated['altura'] : null;
+            $user->morada = (isset($validated['morada']) && $validated['morada'] !== '') ? $validated['morada'] : null;
+            $user->descricao = (isset($validated['descricao']) && $validated['descricao'] !== '') ? $validated['descricao'] : null;
             $user->nr_funcionario = null;
             $user->especialidade = null;
         } else {
-            // Se for Staff (médico, secretaria, admin), evitamos o NULL nas colunas restritas:
-            $user->nr_funcionario = $validated['nr_funcionario'] ?? null;
-            $user->especialidade = $validated['role'] === 'medico' ? ($validated['especialidade'] ?? null) : null;
+            // Se for Staff (médico, secretaria, admin, diretor)
+            $user->nr_funcionario = (isset($validated['nr_funcionario']) && $validated['nr_funcionario'] !== '') ? $validated['nr_funcionario'] : null;
+            $user->especialidade = ($validated['role'] === 'medico' || $validated['role'] === 'diretor') ? ((isset($validated['especialidade']) && $validated['especialidade'] !== '') ? $validated['especialidade'] : null) : null;
             
-            // Injeta strings vazias ou valores padrão em vez de NULL por causa do bloqueio da BD
-            $user->nr_utente = "";
-            $user->idade = 0;
-            $user->altura = 0;
-            $user->morada = "";
-            $user->descricao = ""; // <--- MÁGICA AQUI: Evita o erro de NOT NULL constraint
+            $user->nr_utente = null;
+            $user->idade = null;
+            $user->altura = null;
+            $user->morada = null;
+            $user->descricao = null;
         }
 
         // Se o admin redefiniu a password

@@ -129,11 +129,11 @@ public function register(Request $request)
     // 3. Atualiza os campos na tabela
     $user->nome = $validated['nome'];
     $user->email = $validated['email'];
-    $user->idade = $validated['idade'] ?? $user->idade;
-    $user->altura = $validated['altura'] ?? $user->altura;
-    $user->morada = $validated['morada'] ?? $user->morada;
+    $user->idade = (isset($validated['idade']) && $validated['idade'] !== '') ? $validated['idade'] : null;
+    $user->altura = (isset($validated['altura']) && $validated['altura'] !== '') ? $validated['altura'] : null;
+    $user->morada = (isset($validated['morada']) && $validated['morada'] !== '') ? $validated['morada'] : null;
     $user->hospital_id = $validated['hospital_id'] ?? $user->hospital_id;
-    $user->descricao = $validated['descricao'] ?? $user->descricao;
+    $user->descricao = (isset($validated['descricao']) && $validated['descricao'] !== '') ? $validated['descricao'] : null;
 
     // Se o utilizador digitou uma nova password, fazemos o hash dela antes de guardar
     if (!empty($validated['password'])) {

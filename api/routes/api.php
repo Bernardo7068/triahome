@@ -32,8 +32,13 @@ Route::post('/consultas/finalizar', [TriagemController::class, 'finalizarConsult
 Route::get('/historico/{id}/{role}', [TriagemController::class, 'historico']);
 Route::get('/secretaria/fila', [TriagemController::class, 'filaSecretaria']);
 // Rotas exclusivas para o Admin
+Route::get('/admin/utilizadores/resumo', [AdminController::class, 'resumoDashboard']);
 Route::get('/admin/utilizadores', [AdminController::class, 'listarUtilizadores']);
 Route::get('/admin/hospitais', [AdminController::class, 'listarHospitais']);
 Route::post('/admin/utilizadores/novo', [AdminController::class, 'criarUtilizador']);
 Route::put('/utilizadores/editar/{id}', [AuthController::class, 'editarPerfil']);
 Route::put('/admin/utilizadores/editar/{id}', [AdminController::class, 'editarUtilizador']);
+
+// Auditoria
+Route::get('/admin/auditoria', [AdminController::class, 'listarAuditoria']);
+Route::post('/auditoria/registar', [AdminController::class, 'registarAuditoria']);

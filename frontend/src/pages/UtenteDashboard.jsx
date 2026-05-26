@@ -33,7 +33,7 @@ export default function UtenteDashboard({ user, onUpdateUser, modalPerfilAberto,
       }
 
       const resHist = await api.get(`/historico/${user.id}/utente`);
-      setHistorico(resHist.data || []);
+      setHistorico(resHist.data.data || resHist.data || []);
     } catch (e) {
       console.error("Erro ao carregar dados do utente");
     } finally {

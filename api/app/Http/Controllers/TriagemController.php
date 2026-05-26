@@ -428,14 +428,14 @@ class TriagemController extends Controller
             $query->where('consultas.medico_id', $id);
         } elseif ($role === 'utente') {
             $query->where('consultas.utente_id', $id);
-        } elseif ($role === 'admin') {
-            // Admin vê tudo do hospital a que está alocado
-            $admin = DB::table('utilizadores')->where('id', $id)->first();
-            if ($admin && $admin->hospital_id) {
-                $query->where('consultas.hospital_id', $admin->hospital_id);
+        } elseif ($role === 'diretor' || $role === 'admin') {
+            // Diretor Clínico ou Admin veem tudo do hospital a que estão alocados
+            $utilizador = DB::table('utilizadores')->where('id', $id)->first();
+            if ($utilizador && $utilizador->hospital_id) {
+                $query->where('consultas.hospital_id', $utilizador->hospital_id);
             }
         }
 
-        return response()->json($query->orderBy('data_consulta', 'desc')->get());
+        return response()->json($query->orderBy('data_consulta', 'desc')->paginate(10));
     }
 }

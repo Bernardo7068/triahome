@@ -40,8 +40,8 @@ export default function MedicoDashboard({ user }) {
           setConsultaAtiva(null);
       }
 
-      const resHist = await api.get(`/historico/${userId}/medico?hospital_id=${hospitalId}`);
-      setHistorico(resHist.data || []);
+      const resHist = await api.get(`/historico/${userId}/${user?.role || 'medico'}?hospital_id=${hospitalId}`);
+      setHistorico(resHist.data.data || resHist.data || []);
     } catch (e) { 
       console.error("Erro ao carregar dados:", e); 
     }
@@ -142,7 +142,7 @@ export default function MedicoDashboard({ user }) {
         </div>
         <div className="flex flex-1 gap-4">
           <button onClick={() => setAbaAtiva("historico")} className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all ${abaAtiva === 'historico' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
-            <History size={20}/> <span className="hidden sm:inline">Atendimentos</span> ({historico.length})
+            <History size={20}/> <span className="hidden sm:inline">{user?.role === 'diretor' ? 'Auditoria Clínica' : 'Atendimentos'}</span>
           </button>
           <button onClick={() => navigate('/estatisticas')} className="flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all bg-slate-100 text-slate-700 hover:bg-slate-200">
             <BarChart3 size={20}/> <span className="hidden md:inline">Estatísticas</span>

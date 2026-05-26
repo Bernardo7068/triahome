@@ -7,6 +7,7 @@ import MedicoDashboard from "./pages/MedicoDashboard";
 import SecretariaDashboard from "./pages/SecretariaDashboard";
 import EstatisticasClinicas from "./pages/EstatisticasClinicas";
 import AdminDashboard from "./pages/AdminDashboard"; // <-- Importamos o Dashboard do Admin
+import DiretorDashboard from "./pages/DiretorDashboard"; // <-- Importamos o Dashboard do Diretor
 import DebugLogin from "./pages/DebugLogin";
 import TriagemIA from "./pages/TriagemIA";
 
@@ -70,6 +71,7 @@ function App() {
                     />
                   ) :
                   user.role === "medico" ? <MedicoDashboard user={user} /> :
+                  user.role === "diretor" ? <DiretorDashboard user={user} /> :
                   user.role === "secretaria" ? <SecretariaDashboard user={user} /> :
                   user.role === "admin" ? <AdminDashboard user={user} /> :
                   <SecretariaDashboard user={user} />
@@ -82,7 +84,7 @@ function App() {
                 <Route
                   path="/estatisticas"
                   element={
-                    user.role === "medico" || user.role === "secretaria" || user.role === "admin" ? (
+                    user.role === "medico" || user.role === "diretor" || user.role === "secretaria" || user.role === "admin" ? (
                       <EstatisticasClinicas user={user} />
                     ) : (
                       <Navigate to="/" />

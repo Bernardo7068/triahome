@@ -171,14 +171,14 @@ export default function EstatisticasClinicas({ user }) {
         setErro("");
 
         const pedidos = [
-          api.get(`/historico/${user.id}/admin`).then((res) => res.data || []),
+          api.get(`/historico/${user.id}/${user.role}?hospital_id=${hospitalId}`).then((res) => res.data.data || res.data || []),
           api.get(`/medico/fila?hospital_id=${hospitalId}`).then((res) => res.data || []),
         ];
 
         const [consultasData, filaData] = await Promise.all(pedidos);
-        setConsultas(consultasData);
-        setFilaHospital(filaData);
-        setHistorico(consultasData);
+        setConsultas(Array.isArray(consultasData) ? consultasData : []);
+        setFilaHospital(Array.isArray(filaData) ? filaData : []);
+        setHistorico(Array.isArray(consultasData) ? consultasData : []);
       } catch (e) {
         setErro(e.message || "Erro ao carregar estatísticas");
       } finally {
@@ -313,8 +313,8 @@ export default function EstatisticasClinicas({ user }) {
           </button>
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.35em] text-blue-600 mb-2">Painel clínico</p>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900">Estatísticas detalhadas das consultas</h1>
-            <p className="mt-3 max-w-3xl text-slate-500 leading-relaxed">
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900">Estatísticas detalhadas das consultas</h1>
+            <p className="mt-2 text-sm text-slate-500 leading-relaxed max-w-2xl">
               Visão para médico e secretaria: distribuição de cores, sintomas mais frequentes, casos incoerentes e consultas que pedem revisão manual.
             </p>
           </div>
