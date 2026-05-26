@@ -22,6 +22,7 @@ class HospitalController extends Controller {
                     'utilizadores.nome as nome_utente',
                     'triagens.cor_manchester',
                     'triagens.resumo_ia', // Faltava isto para veres a queixa no popup!
+                    'triagens.especialidade',
                     'triagens.estado as estado_triagem', 
                     'fila_espera.estado as estado_fila',
                     'triagens.hospital_id',

@@ -106,6 +106,7 @@ export default function SecretariaDashboard({ user }) {
               <tr>
                   <th className="p-6 w-32">Prioridade</th>
                   <th className="p-6">Nome do Utente</th>
+                  <th className="p-6">Especialidade</th>
                   <th className="p-6 w-48 text-center">Estado Atual</th>
                   {aba === "checkin" && <th className="p-6 text-right w-48">Ação</th>}
               </tr>
@@ -120,6 +121,7 @@ export default function SecretariaDashboard({ user }) {
                       <tr key={i} className="hover:bg-slate-50 transition-colors">
                           <td className="p-6"><BadgePrioridade cor={p.cor_manchester} /></td>
                           <td className="p-6 font-bold text-slate-700 text-lg">{nomePaciente}</td>
+                          <td className="p-6 text-slate-500 font-medium">{p.especialidade || 'Clínica Geral'}</td>
                           <td className="p-6 text-center">{formatarEstado(p.estado_fila, p.estado_triagem || p.estado)}</td>
                           
                           {aba === "checkin" && (

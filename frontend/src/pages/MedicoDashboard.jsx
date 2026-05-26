@@ -53,7 +53,8 @@ export default function MedicoDashboard({ user }) {
   const chamarProximo = async () => {
     try {
       const hospitalId = user?.hospital_id || 1;
-      const res = await api.get(`/medico/proximo?hospital_id=${hospitalId}`);
+      const medicoId = user?.id || 1;
+      const res = await api.get(`/medico/proximo?hospital_id=${hospitalId}&medico_id=${medicoId}`);
       
       if (res.data && res.data.nome_utente) {
         setConsultaAtiva(res.data);
@@ -166,6 +167,7 @@ export default function MedicoDashboard({ user }) {
                   <tr>
                     <th className="p-6">Prioridade</th>
                     <th className="p-6">Utente</th>
+                    <th className="p-6">Especialidade</th>
                     <th className="p-6">Tempo Espera</th>
                     <th className="p-6 text-right">Diagnóstico</th>
                   </tr>
@@ -175,6 +177,7 @@ export default function MedicoDashboard({ user }) {
                     <tr key={i} className="hover:bg-slate-50 transition-colors">
                       <td className="p-6"><BadgePrioridade cor={p.cor_manchester} /></td>
                       <td className="p-6 font-bold text-slate-700">{p.nome_utente}</td>
+                      <td className="p-6 text-slate-500 text-sm font-bold">{p.especialidade || 'Clínica Geral'}</td>
                       <td className="p-6 font-mono text-sm text-slate-500">
                           <div className="flex items-center gap-2">
                             <Timer size={16} className="text-slate-400" /> 
@@ -210,6 +213,7 @@ export default function MedicoDashboard({ user }) {
                     <tr>
                       <th className="p-6">Prioridade</th>
                       <th className="p-6">Paciente</th>
+                      <th className="p-6">Especialidade</th>
                       <th className="p-6">Tempo Espera</th>
                       <th className="p-6 text-center">Diagnóstico</th>
                       <th className="p-6 text-right">Estado Atual</th>
@@ -220,6 +224,7 @@ export default function MedicoDashboard({ user }) {
                         <tr key={i} className="hover:bg-slate-50 transition-colors">
                             <td className="p-6"><BadgePrioridade cor={p.cor_manchester} /></td>
                             <td className="p-6 font-bold text-slate-700">{p.nome_utente}</td>
+                            <td className="p-6 text-slate-500 text-xs font-bold">{p.especialidade || 'Clínica Geral'}</td>
                             <td className="p-6 font-mono text-xs text-slate-500">{calcularTempoEspera(p.hora_entrada)}</td>
                             <td className="p-6 text-center">
                                 <button onClick={() => setPacientePopup(p)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-lg">
@@ -310,6 +315,9 @@ export default function MedicoDashboard({ user }) {
             <p className="text-sm font-mono text-slate-400 mb-8 uppercase tracking-widest">Tempo na fila: {calcularTempoEspera(pacientePopup.hora_entrada)}</p>
             
             <div className="text-left bg-slate-50 p-8 rounded-4xl border border-slate-100">
+                <p className="text-[10px] font-black uppercase text-blue-500 mb-1 tracking-widest">Especialidade</p>
+                <p className="text-slate-800 font-bold mb-4">{pacientePopup.especialidade || 'Clínica Geral'}</p>
+                
                 <p className="text-[10px] font-black uppercase text-blue-500 mb-3 tracking-widest">Pré-Diagnóstico</p>
                 <p className="text-slate-700 italic leading-relaxed text-base">" {pacientePopup.resumo_ia || "Nenhuma informação disponível."}"</p>
             </div>

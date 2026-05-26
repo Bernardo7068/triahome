@@ -61,6 +61,7 @@ CREATE TABLE triagens (
     cor_manchester TEXT CHECK(cor_manchester IN ('vermelho','laranja','amarelo','verde','azul','branco')),
     nivel_prioridade INTEGER CHECK(nivel_prioridade BETWEEN 1 AND 5),
     resumo_ia TEXT,
+    especialidade TEXT,
     estado TEXT NOT NULL DEFAULT 'pendente' 
         CHECK(estado IN ('pendente','checkin_feito','em_espera','finalizado','cancelado')),
     criado_em TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
@@ -105,6 +106,7 @@ SELECT
     t.cor_manchester,
     t.nivel_prioridade,
     t.resumo_ia,
+    t.especialidade,
     t.estado AS estado_triagem,
     f.estado AS estado_fila,
     f.posicao

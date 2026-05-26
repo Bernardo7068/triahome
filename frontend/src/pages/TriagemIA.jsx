@@ -19,22 +19,20 @@ function mensagemFinal(resultado) {
 
 function parseResultado(texto) {
   /**
-   * Extrai categoria, justificação e ação do texto da IA.
-   * Exemplo:
-   * "Categoria: Amarelo
-   *  Justificação: Febre alta...
-   *  Ação recomendada: Procurar médico..."
+   * Extrai categoria, especialidade, justificação e ação do texto da IA.
    */
   let categoria = '';
+  let especialidade = '';
   let justificacao = '';
   let acao = '';
 
   const linhas = texto.split('\n');
   for (let linha of linhas) {
     const lower = linha.toLowerCase();
-    // Corrigido: usar .includes() em vez de 'in' (que é para objetos)
     if (lower.includes('categoria') && linha.includes(':')) {
       categoria = linha.split(':')[1]?.trim() || '';
+    } else if (lower.includes('especialidade') && linha.includes(':')) {
+      especialidade = linha.split(':')[1]?.trim() || '';
     } else if ((lower.includes('justif') || lower.includes('fundamentação')) && linha.includes(':')) {
       justificacao = linha.split(':')[1]?.trim() || '';
     } else if ((lower.includes('ação') || lower.includes('acao') || lower.includes('recomend')) && linha.includes(':')) {
@@ -53,10 +51,11 @@ function parseResultado(texto) {
     else categoria = 'Amarelo'; // default
   }
 
+  if (!especialidade) especialidade = 'Clínica Geral';
   if (!justificacao) justificacao = texto.substring(0, 300);
   if (!acao) acao = 'Procurar atendimento médico imediatamente';
 
-  return { categoria, justificacao, acao };
+  return { categoria, especialidade, justificacao, acao };
 }
 
 export default function TriagemIA({ user, onCancel }) {
@@ -142,7 +141,8 @@ export default function TriagemIA({ user, onCancel }) {
             parsedResult.categoria,
             parsedResult.justificacao,
             parsedResult.acao,
-            texto
+            texto,
+            parsedResult.especialidade
           );
           
           console.log('✅ Triagem guardada na BD com sucesso:', saveResponse);
@@ -198,7 +198,8 @@ export default function TriagemIA({ user, onCancel }) {
             parsedResult.categoria,
             parsedResult.justificacao,
             parsedResult.acao,
-            texto
+            texto,
+            parsedResult.especialidade
           );
           
           console.log('✅ Triagem guardada na BD com sucesso:', saveResponse);
@@ -299,6 +300,11 @@ export default function TriagemIA({ user, onCancel }) {
                         <h2 className="text-2xl font-black tracking-tighter italic leading-none">
                           {resultado.emoji} {resultado.cor}
                         </h2>
+                        {resultado.especialidade && (
+                          <div className="mt-2 text-blue-400 font-black uppercase text-[10px] tracking-widest">
+                            Especialidade Recomendada: {resultado.especialidade}
+                          </div>
+                        )}
                       </div>
                       <p className="text-slate-300 text-xs leading-relaxed italic font-medium border-l-2 border-blue-600 pl-4">
                         "{resultado.resultado}"

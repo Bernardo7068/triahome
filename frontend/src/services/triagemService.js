@@ -1,5 +1,5 @@
 // Prefer environment variable for remote triagem service, fallback to localhost
-const BASE_URL = import.meta.env.VITE_TRIAGEM_URL || 'http://192.168.67.251:5000';
+const BASE_URL = import.meta.env.VITE_TRIAGEM_URL || 'http://localhost:5000';
 
 async function requestJson(path, body) {
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -46,7 +46,7 @@ export function statusTriagem() {
   });
 }
 
-export function guardarResultadoTriagem(utenteId, categoria, justificacao, acao, resumoClinico) {
+export function guardarResultadoTriagem(utenteId, categoria, justificacao, acao, resumoClinico, especialidade) {
   /**
    * Envia o resultado final da IA para o backend Laravel guardar na BD
    */
@@ -64,7 +64,8 @@ export function guardarResultadoTriagem(utenteId, categoria, justificacao, acao,
       categoria,
       justificacao,
       acao,
-      resumo_clinico: resumoClinico
+      resumo_clinico: resumoClinico,
+      especialidade
     })
   }).then(async (res) => {
     const data = await res.json().catch(() => ({}));
