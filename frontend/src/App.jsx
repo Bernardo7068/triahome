@@ -8,6 +8,7 @@ import SecretariaDashboard from "./pages/SecretariaDashboard";
 import EstatisticasClinicas from "./pages/EstatisticasClinicas";
 import AdminDashboard from "./pages/AdminDashboard"; // <-- Importamos o Dashboard do Admin
 import DebugLogin from "./pages/DebugLogin";
+import TriagemIA from "./pages/TriagemIA";
 
 function App() {
   const [user, setUser] = useState(() => {

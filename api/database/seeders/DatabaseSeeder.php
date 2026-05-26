@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             HospitalSeeder::class,
             UtilizadorSeeder::class,
             TriagemSeeder::class,
+            ConsultasHistoricasSeeder::class,
         ]);
     }
 }

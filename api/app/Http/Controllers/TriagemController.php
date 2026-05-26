@@ -177,6 +177,11 @@ class TriagemController extends Controller
                     't.id as triagem_id',
                     't.utente_id',
                     'u.nome as nome_utente',
+                    'u.nr_utente',
+                    'u.idade',
+                    'u.altura',
+                    'u.morada',
+                    'u.descricao as descricao_utente',
                     't.cor_manchester',
                     't.resumo_ia',
                     't.especialidade',
@@ -290,6 +295,9 @@ class TriagemController extends Controller
             ->select(
                 'triagens.id',
                 'utilizadores.nome', // Nome que vem da tabela utilizadores
+                'utilizadores.nr_utente',
+                'utilizadores.idade',
+                'utilizadores.morada',
                 'triagens.cor_manchester',
                 'triagens.especialidade',
                 'triagens.estado',
@@ -317,6 +325,8 @@ class TriagemController extends Controller
             ->select(
                 'triagens.id as triagem_id',
                 'utilizadores.nome as nome_utente',
+                'utilizadores.nr_utente',
+                'utilizadores.idade',
                 'triagens.cor_manchester',
                 'triagens.especialidade',
                 'triagens.estado as estado_triagem', // pendente, em_espera, finalizado
@@ -379,12 +389,25 @@ class TriagemController extends Controller
             ->join('triagens', 'consultas.triagem_id', '=', 'triagens.id')
             ->join('utilizadores as u', 'consultas.utente_id', '=', 'u.id')
             ->join('utilizadores as m', 'consultas.medico_id', '=', 'm.id')
+            ->join('hospitais as h', 'consultas.hospital_id', '=', 'h.id')
             ->select(
                 'consultas.*',
                 'u.nome as nome_utente',
+                'u.nr_utente',
+                'u.idade',
+                'u.altura',
+                'u.morada as morada_utente',
+                'u.descricao as descricao_utente',
                 'm.nome as nome_medico',
+                'm.nr_funcionario as nr_cedula_medico',
+                'triagens.id as triagem_id',
                 'triagens.cor_manchester',
-                'triagens.resumo_ia'
+                'triagens.resumo_ia',
+                'triagens.especialidade',
+                'triagens.conselhos_autocuidado',
+                'h.nome as nome_hospital',
+                'h.morada as morada_hospital',
+                'h.telefone as telefone_hospital'
             );
 
         if ($role === 'medico') {

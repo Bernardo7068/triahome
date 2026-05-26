@@ -275,18 +275,33 @@ export default function MedicoDashboard({ user }) {
           <div className="bg-slate-900 text-white p-6 md:p-10 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-6 w-full">
               <div className="bg-white/10 p-5 rounded-3xl hidden sm:block"><User size={40}/></div>
-              <div>
+              <div className="flex-1">
                 <h3 className="text-2xl md:text-4xl font-black tracking-tighter italic">{consultaAtiva.nome_utente}</h3>
-                <div className="flex gap-2 mt-2">
+                <div className="flex flex-wrap gap-4 mt-2">
                     <BadgePrioridade cor={consultaAtiva.cor_manchester}/>
+                    <span className="bg-white/10 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest">{consultaAtiva.idade ? `${consultaAtiva.idade} ANOS` : 'IDADE N/D'}</span>
+                    <span className="bg-white/10 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest">{consultaAtiva.altura ? `${consultaAtiva.altura} CM` : 'ALTURA N/D'}</span>
                 </div>
               </div>
             </div>
             <div className="w-full md:max-w-xs text-left md:text-right">
+                <p className="text-[10px] font-black uppercase text-blue-400 mb-1 tracking-widest">Morada</p>
+                <p className="text-xs opacity-80 font-medium mb-3">{consultaAtiva.morada || "Não registada"}</p>
                 <p className="text-[10px] font-black uppercase text-blue-400 mb-1 tracking-widest">Queixa Principal</p>
                 <p className="text-sm italic opacity-80 leading-relaxed font-medium">"{consultaAtiva.resumo_ia}"</p>
             </div>
           </div>
+          
+          {/* NOVA SECÇÃO: FICHA CLÍNICA DO UTENTE NA CONSULTA */}
+          {consultaAtiva.descricao_utente && (
+            <div className="px-6 md:px-10 py-4 bg-amber-50/50 border-b border-amber-100">
+                <p className="text-[10px] font-black uppercase text-amber-600 mb-2 tracking-widest flex items-center gap-2">
+                    <AlertCircle size={14}/> Ficha Clínica / Antecedentes
+                </p>
+                <p className="text-sm text-amber-900 font-medium italic">"{consultaAtiva.descricao_utente}"</p>
+            </div>
+          )}
+
           <div className="p-6 md:p-10 space-y-8">
             <div className="space-y-4">
               <label className="text-xs font-black uppercase text-slate-400 tracking-widest ml-4">Diagnóstico Clínico</label>
@@ -312,14 +327,37 @@ export default function MedicoDashboard({ user }) {
                 <BadgePrioridade cor={pacientePopup.cor_manchester}/>
             </div>
             <h2 className="text-3xl font-black mb-2">{pacientePopup.nome_utente}</h2>
-            <p className="text-sm font-mono text-slate-400 mb-8 uppercase tracking-widest">Tempo na fila: {calcularTempoEspera(pacientePopup.hora_entrada)}</p>
+            <div className="flex justify-center gap-4 mb-8">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest bg-slate-50 px-3 py-1 rounded-lg italic">
+                    {pacientePopup.idade ? `${pacientePopup.idade} ANOS` : 'Idade N/D'}
+                </span>
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest bg-slate-50 px-3 py-1 rounded-lg italic">
+                    {pacientePopup.altura ? `${pacientePopup.altura} CM` : 'Altura N/D'}
+                </span>
+            </div>
             
-            <div className="text-left bg-slate-50 p-8 rounded-4xl border border-slate-100">
-                <p className="text-[10px] font-black uppercase text-blue-500 mb-1 tracking-widest">Especialidade</p>
-                <p className="text-slate-800 font-bold mb-4">{pacientePopup.especialidade || 'Clínica Geral'}</p>
+            <div className="text-left bg-slate-50 p-8 rounded-4xl border border-slate-100 space-y-6">
+                <div>
+                  <p className="text-[10px] font-black uppercase text-blue-500 mb-1 tracking-widest">Morada</p>
+                  <p className="text-slate-800 font-bold text-sm">{pacientePopup.morada || 'Não registada'}</p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] font-black uppercase text-blue-500 mb-1 tracking-widest">Especialidade Recomendada</p>
+                  <p className="text-slate-800 font-bold text-sm">{pacientePopup.especialidade || 'Clínica Geral'}</p>
+                </div>
                 
-                <p className="text-[10px] font-black uppercase text-blue-500 mb-3 tracking-widest">Pré-Diagnóstico</p>
-                <p className="text-slate-700 italic leading-relaxed text-base">" {pacientePopup.resumo_ia || "Nenhuma informação disponível."}"</p>
+                <div>
+                  <p className="text-[10px] font-black uppercase text-blue-500 mb-3 tracking-widest">Resumo da Triagem IA</p>
+                  <p className="text-slate-700 italic leading-relaxed text-sm">" {pacientePopup.resumo_ia || "Nenhuma informação disponível."}"</p>
+                </div>
+
+                {pacientePopup.descricao_utente && (
+                  <div className="pt-4 border-t border-slate-200">
+                    <p className="text-[10px] font-black uppercase text-amber-600 mb-2 tracking-widest">Ficha Clínica / Antecedentes</p>
+                    <p className="text-slate-700 italic leading-relaxed text-sm font-medium">" {pacientePopup.descricao_utente}"</p>
+                  </div>
+                )}
             </div>
           </div>
         </div>

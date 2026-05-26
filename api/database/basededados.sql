@@ -47,7 +47,7 @@ CREATE TABLE utilizadores (
     idade INTEGER,
     altura INTEGER,
     morada TEXT,
-    descricao TEXT
+    descricao TEXT,
     criado_em TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 
@@ -103,6 +103,11 @@ SELECT
     t.hospital_id,
     t.utente_id,
     u.nome AS nome_utente,
+    u.nr_utente,
+    u.idade,
+    u.altura,
+    u.morada,
+    u.descricao AS descricao_utente,
     t.cor_manchester,
     t.nivel_prioridade,
     t.resumo_ia,
@@ -119,51 +124,42 @@ LEFT JOIN fila_espera f ON t.id = f.triagem_id;
 -- -------------------------------------------------------------
 
 -- 7.1 HOSPITAIS
-INSERT INTO hospitais (id, nome, morada, cidade, telefone) VALUES 
-(1, 'Hospital de Ourém', 'Rua da Saúde, 123', 'Ourém', '249111222'),
-(2, 'Hospital de Leiria', 'Perto do Estádio, s/n', 'Leiria', '244333444'),
-(3, 'Hospital de Santarém', 'Av. Central, 50', 'Santarém', '243555666');
+INSERT INTO hospitais (id, nome, morada, cidade, telefone, capacidade_urgencia) VALUES 
+(1, 'Hospital de Ourém', 'Rua da Saúde, 123', 'Ourém', '249111222', 50),
+(2, 'Hospital de Leiria', 'Perto do Estádio, s/n', 'Leiria', '244333444', 120),
+(3, 'Hospital de Santarém', 'Av. Central, 50', 'Santarém', '243555666', 80),
+(4, 'Hospital de Coimbra', 'Rua Larga, UC', 'Coimbra', '239444555', 200),
+(5, 'Hospital de Tomar', 'Alameda do Convento, 10', 'Tomar', '249321654', 40);
 
 -- 7.2 ADMIN E STAFF
 -- Todos usam a password encriptada para 'password'
-INSERT INTO utilizadores (id, nome, email, password_hash, role) 
-VALUES (1, 'Administrador Geral', 'admin@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+INSERT INTO utilizadores (id, nome, email, password_hash, role, nr_funcionario, morada, descricao) 
+VALUES (1, 'Administrador Geral', 'admin@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'ADM001', 'Sede SNS, Lisboa', 'Administrador do Sistema');
 
 -- Staff Hospital 1 (Ourém)
-INSERT INTO utilizadores (id, nome, email, password_hash, role, nr_funcionario, hospital_id) 
-VALUES (2, 'Carla Secretaria (Ourém)', 'carla@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'secretaria', 'SEC001', 1);
-INSERT INTO utilizadores (id, nome, email, password_hash, role, nr_funcionario, especialidade, hospital_id) 
-VALUES (3, 'Dr. Bernardo (Ourém)', 'bernardo@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'medico', 'MED001', 'Clínica Geral', 1);
+INSERT INTO utilizadores (id, nome, email, password_hash, role, nr_funcionario, hospital_id, idade, morada, descricao) 
+VALUES (2, 'Carla Secretaria (Ourém)', 'carla@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'secretaria', 'SEC001', 1, 32, 'Rua das Flores, Ourém', 'Secretariado Ourém');
 
 -- Staff Hospital 2 (Leiria)
-INSERT INTO utilizadores (id, nome, email, password_hash, role, nr_funcionario, hospital_id) 
-VALUES (4, 'Sónia Secretaria (Leiria)', 'sonia@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'secretaria', 'SEC002', 2);
-INSERT INTO utilizadores (id, nome, email, password_hash, role, nr_funcionario, especialidade, hospital_id) 
-VALUES (5, 'Dra. Helena (Leiria)', 'helena@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'medico', 'MED002', 'Traumatologia', 2);
+INSERT INTO utilizadores (id, nome, email, password_hash, role, nr_funcionario, hospital_id, idade, morada, descricao) 
+VALUES (3, 'Sónia Secretaria (Leiria)', 'sonia@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'secretaria', 'SEC002', 2, 29, 'Av. Marquês de Pombal, Leiria', 'Secretariado Leiria');
 
--- 7.3 UTENTES
-INSERT INTO utilizadores (id, nome, email, password_hash, role, nr_utente) VALUES 
-(6, 'Ana Ferreira', 'ana@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'utente', '111222333'),
-(7, 'Tiago Mendes', 'tiago@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'utente', '444555666'),
-(8, 'João Silva', 'joao@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'utente', '777888999'),
-(9, 'Inês Rodrigues', 'ines@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'utente', '999000111'),
-(10, 'Marta Costa', 'marta@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'utente', '222333444');
+-- Exemplo de Médicos
+INSERT INTO utilizadores (id, nome, email, password_hash, role, nr_funcionario, especialidade, hospital_id, idade, morada, descricao) VALUES
+(10, 'Dr. Manuel Cardiologia (Ourém)', 'medico.cardiologia.h1@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'medico', 'MED010', 'Cardiologia', 1, 45, 'Residência Médica Ourém', 'Especialista em Cardiologia'),
+(11, 'Dra. Ana Pediatria (Leiria)', 'medico.pediatria.h2@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'medico', 'MED011', 'Pediatria', 2, 38, 'Residência Médica Leiria', 'Especialista em Pediatria');
 
--- 7.4 CENÁRIOS DE TRIAGEM
+-- 7.3 UTENTES (Com perfil completo)
+INSERT INTO utilizadores (id, nome, email, password_hash, role, nr_utente, idade, altura, morada, descricao) VALUES 
+(500, 'Ana Maria Ferreira', 'ana@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'utente', '111222333', 28, 165, 'Rua das Camélias, 12, Ourém', 'Alergia a Penicilina. Histórico de Hipertensão controlada.'),
+(501, 'Tiago André Mendes', 'tiago@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'utente', '444555666', 34, 182, 'Av. da Liberdade, 45, Leiria', 'Diabetes Tipo 2. Praticante de desporto regular.'),
+(502, 'João Paulo Silva', 'joao@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'utente', '777888999', 52, 175, 'Rua do Comércio, Santarém', 'Fumador. Problemas respiratórios ligeiros no inverno.'),
+(503, 'Inês Catarina Rodrigues', 'ines@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'utente', '999000111', 19, 160, 'Rua da Universidade, Coimbra', 'Asma infantil. Sem medicação atual.'),
+(504, 'Marta Sofia Costa', 'marta@tria.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'utente', '222333444', 67, 158, 'Largo do Coreto, Tomar', 'Osteoporose. Toma suplementação de Cálcio e Vitamina D.');
 
--- OURÉM: Ana (Pendente), Tiago (Validar), João (Em Espera - Prioritário)
-INSERT INTO triagens (utente_id, hospital_id, cor_manchester, nivel_prioridade, resumo_ia, estado) VALUES 
-(6, 1, 'amarelo', 3, 'Gripe forte e febre persistente.', 'pendente'),
-(7, 1, 'verde', 4, 'Dor no joelho após exercício.', 'checkin_feito'),
-(8, 1, 'laranja', 2, 'Dificuldade respiratória e dor no peito.', 'em_espera');
+-- 7.4 CENÁRIOS DE TRIAGEM (Apenas exemplos)
+INSERT INTO triagens (id, utente_id, hospital_id, cor_manchester, nivel_prioridade, resumo_ia, especialidade, estado) VALUES 
+(1, 500, 1, 'amarelo', 3, 'Gripe forte e febre persistente.', 'Clínica Geral', 'pendente'),
+(2, 501, 2, 'laranja', 2, 'Dificuldade respiratória intensa.', 'Pneumologia', 'em_espera');
 
--- Adiciona João à Fila de Espera de Ourém
-INSERT INTO fila_espera (triagem_id, hospital_id, posicao, estado) VALUES (3, 1, 1, 'aguardar');
-
--- LEIRIA: Inês (Pendente), Marta (Em Espera)
-INSERT INTO triagens (utente_id, hospital_id, cor_manchester, nivel_prioridade, resumo_ia, estado) VALUES 
-(9, 2, 'vermelho', 1, 'Paragem cardiorrespiratória iminente.', 'pendente'),
-(10, 2, 'amarelo', 3, 'Possível fratura no braço.', 'em_espera');
-
--- Adiciona Marta à Fila de Espera de Leiria
-INSERT INTO fila_espera (triagem_id, hospital_id, posicao, estado) VALUES (5, 2, 1, 'aguardar');
+INSERT INTO fila_espera (triagem_id, hospital_id, posicao, estado) VALUES (2, 2, 1, 'aguardar');

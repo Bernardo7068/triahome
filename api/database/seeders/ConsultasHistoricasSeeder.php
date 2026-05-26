@@ -149,9 +149,9 @@ class ConsultasHistoricasSeeder extends Seeder
             ],
         ];
 
-        $utentes = [3, 4, 5, 6];
-        $medicos = [2, 8, 9];
-        $hospitais = [1, 1, 2, 2, 3];
+        $utentes = [500, 501, 502, 503, 504, 505];
+        $medicos = [10, 11, 25, 26, 40, 41]; // Alguns médicos de Ourém, Leiria e Santarém
+        $hospitais = [1, 2, 3];
         $baseDate = Carbon::now()->subDays(14);
 
         DB::transaction(function () use ($toCreate, $cases, $utentes, $medicos, $hospitais, $baseDate) {
@@ -159,8 +159,10 @@ class ConsultasHistoricasSeeder extends Seeder
                 $case = $cases[$i % count($cases)];
                 $utenteId = $utentes[$i % count($utentes)];
                 $hospitalId = $hospitais[$i % count($hospitais)];
-                $medicoId = $medicos[$i % count($medicos)];
-                $dataConsulta = $baseDate->copy()->subDays($i * 3)->addHours($i % 8);
+                // Tenta selecionar um médico do mesmo hospital se possível, senão usa um qualquer
+                $medicoId = $medicos[$i % count($medicos)]; 
+                
+                $dataConsulta = $baseDate->copy()->addDays($i % 14)->addHours($i % 24);
 
                 $triagemId = DB::table('triagens')->insertGetId([
                     'utente_id' => $utenteId,
@@ -179,7 +181,7 @@ class ConsultasHistoricasSeeder extends Seeder
                     'hospital_id' => $hospitalId,
                     'diagnostico' => $case['diagnostico'],
                     'prescricao' => $case['prescricao'],
-                    'data_consulta' => $dataConsulta->copy()->addHours(2)->toDateTimeString(),
+                    'data_consulta' => $dataConsulta->copy()->addHours(1)->toDateTimeString(),
                 ]);
             }
         });

@@ -21,6 +21,10 @@ return new class extends Migration
             $table->string('nr_funcionario')->unique()->nullable();
             $table->string('especialidade')->nullable();
             $table->foreignId('hospital_id')->nullable()->constrained('hospitais')->nullOnDelete();
+            $table->integer('idade')->nullable();
+            $table->integer('altura')->nullable();
+            $table->string('morada')->nullable();
+            $table->text('descricao')->nullable();
             $table->boolean('ativo')->default(true);
             $table->dateTime('criado_em')->useCurrent();
         });

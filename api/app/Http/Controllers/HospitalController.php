@@ -20,6 +20,11 @@ class HospitalController extends Controller {
                     'triagens.id as triagem_id',
                     'triagens.utente_id', // Faltava isto para finalizar a consulta!
                     'utilizadores.nome as nome_utente',
+                    'utilizadores.nr_utente',
+                    'utilizadores.idade',
+                    'utilizadores.altura',
+                    'utilizadores.morada',
+                    'utilizadores.descricao as descricao_utente',
                     'triagens.cor_manchester',
                     'triagens.resumo_ia', // Faltava isto para veres a queixa no popup!
                     'triagens.especialidade',
