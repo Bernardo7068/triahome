@@ -128,16 +128,27 @@ class TriagemController extends Controller
     public function chamarUtentePorNome($nome_utente) {
         try {
             $user = DB::table('utilizadores')->where('nome', $nome_utente)->first();
-            // Busca a triagem mais recente deste utente
-            $triagem = DB::table('triagens')->where('utente_id', $user->id)->orderBy('id', 'desc')->first();
+            
+            // 1. Proteção: Se o user não existir, não avança
+            if (!$user) {
+                return response()->json(['message' => 'Utente não encontrado'], 404);
+            }
+
+            // 2. Busca a triagem deste utente MAS que esteja especificamente "pendente"
+            $triagem = DB::table('triagens')
+                ->where('utente_id', $user->id)
+                ->where('estado', 'pendente') // <--- ESTA É A CORREÇÃO CRUCIAL
+                ->orderBy('id', 'desc')
+                ->first();
 
             if ($triagem) {
+                // 3. Atualiza os estados corretamente
                 DB::table('triagens')->where('id', $triagem->id)->update(['estado' => 'em_espera']);
 
                 DB::table('fila_espera')->updateOrInsert(
                     ['triagem_id' => $triagem->id],
                     [
-                        'hospital_id' => $triagem->hospital_id, // Mantém o hospital original da triagem
+                        'hospital_id' => $triagem->hospital_id,
                         'posicao' => 1,
                         'estado' => 'aguardar',
                         'criado_em' => now()
@@ -146,7 +157,8 @@ class TriagemController extends Controller
 
                 return response()->json(['message' => 'Sucesso!']);
             }
-            return response()->json(['message' => 'Utente não encontrado'], 404);
+            
+            return response()->json(['message' => 'Nenhuma triagem pendente para validar.'], 404);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
@@ -364,17 +376,19 @@ class TriagemController extends Controller
             // 2. Atualizar fila_espera para concluido
             DB::table('fila_espera')->where('triagem_id', $triagem_id)->update(['estado' => 'concluido']);
 
-            // 3. Criar registo na tabela consultas
+            // 3. Criar ou atualizar registo na tabela consultas
             $triagem = DB::table('triagens')->where('id', $triagem_id)->first();
-            DB::table('consultas')->insert([
-                'triagem_id' => $triagem_id,
-                'medico_id' => $medico_id,
-                'utente_id' => $utente_id,
-                'hospital_id' => $triagem->hospital_id,
-                'diagnostico' => $diagnostico,
-                'prescricao' => $prescricao,
-                'data_consulta' => now()
-            ]);
+            DB::table('consultas')->updateOrInsert(
+                ['triagem_id' => $triagem_id],
+                [
+                    'medico_id' => $medico_id,
+                    'utente_id' => $utente_id,
+                    'hospital_id' => $triagem->hospital_id,
+                    'diagnostico' => $diagnostico,
+                    'prescricao' => $prescricao,
+                    'data_consulta' => now()
+                ]
+            );
 
             DB::commit();
             return response()->json(['message' => 'Consulta finalizada com sucesso']);
@@ -412,8 +426,14 @@ class TriagemController extends Controller
 
         if ($role === 'medico') {
             $query->where('consultas.medico_id', $id);
-        } else {
+        } elseif ($role === 'utente') {
             $query->where('consultas.utente_id', $id);
+        } elseif ($role === 'admin') {
+            // Admin vê tudo do hospital a que está alocado
+            $admin = DB::table('utilizadores')->where('id', $id)->first();
+            if ($admin && $admin->hospital_id) {
+                $query->where('consultas.hospital_id', $admin->hospital_id);
+            }
         }
 
         return response()->json($query->orderBy('data_consulta', 'desc')->get());

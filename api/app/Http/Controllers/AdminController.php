@@ -23,14 +23,14 @@ class AdminController extends Controller
         return DB::table('hospitais')->get();
     }
 
-    // Criar um novo utilizador do Staff (Médico, Secretaria ou outro Admin)
+    // Criar um novo utilizador (Staff ou Utente)
     public function criarUtilizador(Request $request) {
         
         $validated = $request->validate([
             'nome' => 'required|string|max:255',
             'email' => 'required|email|unique:utilizadores,email',
             'password' => 'required|string|min:6',
-            'role' => 'required|in:secretaria,medico,admin', // Permite criar outros admins
+            'role' => 'required|in:utente,secretaria,medico,admin', 
             'hospital_id' => 'required|exists:hospitais,id',
             'nr_funcionario' => 'required_if:role,medico,secretaria|nullable|string|unique:utilizadores,nr_funcionario',
             'especialidade' => 'nullable|string'
@@ -45,8 +45,14 @@ class AdminController extends Controller
             'password_hash' => Hash::make($validated['password']),
             'role' => $validated['role'],
             'hospital_id' => $validated['hospital_id'],
-            'nr_funcionario' => $validated['role'] !== 'admin' ? $validated['nr_funcionario'] : null,
-            'especialidade' => $validated['role'] === 'medico' ? $validated['especialidade'] : null
+            'nr_funcionario' => ($validated['role'] !== 'admin' && $validated['role'] !== 'utente') ? $validated['nr_funcionario'] : null,
+            'especialidade' => $validated['role'] === 'medico' ? $validated['especialidade'] : null,
+            // Injeta valores padrão para utentes novos
+            'nr_utente' => "",
+            'idade' => 0,
+            'altura' => 0,
+            'morada' => "",
+            'descricao' => ""
         ]);
         
         return response()->json([

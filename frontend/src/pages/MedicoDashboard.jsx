@@ -15,6 +15,7 @@ export default function MedicoDashboard({ user }) {
   const [relatorio, setRelatorio] = useState({ diagnostico: "", prescricao: "", notas_clinicas: "" });
   const [relatorioParaVer, setRelatorioParaVer] = useState(null);
   
+  const [finalizando, setFinalizando] = useState(false);
   const [agora, setAgora] = useState(new Date());
 
   useEffect(() => {
@@ -72,6 +73,7 @@ export default function MedicoDashboard({ user }) {
       alert("Por favor, preencha o diagnóstico e a prescrição.");
       return;
     }
+    setFinalizando(true);
     try {
       await api.post(`/consultas/finalizar`, {
         triagem_id: consultaAtiva.triagem_id,
@@ -91,6 +93,8 @@ export default function MedicoDashboard({ user }) {
       console.error('Erro finalizarConsulta:', e);
       const msg = e.response?.data?.message || e.message || 'Erro ao finalizar consulta.';
       alert(msg);
+    } finally {
+      setFinalizando(false);
     }
   };
 
@@ -311,8 +315,12 @@ export default function MedicoDashboard({ user }) {
               <label className="text-xs font-black uppercase text-slate-400 tracking-widest ml-4">Prescrição e Recomendações</label>
               <textarea className="w-full p-6 md:p-8 bg-slate-50 border-2 rounded-[2.5rem] h-32 md:h-40 outline-none focus:border-green-600 transition-all" placeholder="Escreva aqui a medicação e cuidados..." value={relatorio.prescricao} onChange={e => setRelatorio({...relatorio, prescricao: e.target.value})} />
             </div>
-            <button onClick={finalizarConsulta} className="w-full bg-green-600 text-white py-6 rounded-[2.5rem] font-black text-xl md:text-2xl hover:bg-slate-900 transition-all shadow-xl shadow-green-100 flex items-center justify-center gap-4">
-              <Send size={24}/> Finalizar Atendimento
+            <button 
+              onClick={finalizarConsulta} 
+              disabled={finalizando}
+              className="w-full bg-green-600 text-white py-6 rounded-[2.5rem] font-black text-xl md:text-2xl hover:bg-slate-900 transition-all shadow-xl shadow-green-100 flex items-center justify-center gap-4 disabled:opacity-50"
+            >
+              <Send size={24}/> {finalizando ? "A finalizar..." : "Finalizar Atendimento"}
             </button>
           </div>
         </div>
