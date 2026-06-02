@@ -145,9 +145,15 @@ export default function SecretariaDashboard({ user }) {
                   })
               ) : (
                   <tr>
-                      <td colSpan={aba === "checkin" ? 4 : 3} className="p-16 text-center text-slate-400 font-medium italic">
-                          <div className="border-dashed border-2 p-8 m-4 rounded-3xl">
-                             {aba === "checkin" ? "Não há utentes a aguardar check-in no momento." : "A sala de espera e os gabinetes estão vazios."}
+                      <td colSpan={aba === "checkin" ? 6 : 5} className="p-16 text-center text-slate-400 font-medium italic">
+                          <div className="border-dashed border-2 p-12 rounded-[2.5rem] bg-slate-50/50 max-w-2xl mx-auto flex flex-col items-center justify-center gap-4">
+                             <div className="bg-white p-4 rounded-full shadow-sm">
+                                <Search size={32} className="text-slate-300" />
+                             </div>
+                             <p className="text-slate-500 font-bold text-lg">
+                                {aba === "checkin" ? "Não há utentes a aguardar check-in no momento." : "A sala de espera e os gabinetes estão vazios."}
+                             </p>
+                             <p className="text-slate-400 text-sm not-italic">O sistema atualizará automaticamente assim que houver novos registos.</p>
                           </div>
                       </td>
                   </tr>

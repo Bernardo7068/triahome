@@ -22,7 +22,7 @@ export default function ModalRelatorio({ dados, onClose }) {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 15mm 15mm 15mm 15mm;
+            margin: 0;
           }
           body {
             background: #fff;
@@ -42,6 +42,7 @@ export default function ModalRelatorio({ dados, onClose }) {
             height: 100%;
             max-height: 100%;
             overflow: hidden !important;
+            padding: 20mm !important;
           }
         }
       `}} />
@@ -53,10 +54,10 @@ export default function ModalRelatorio({ dados, onClose }) {
         </button>
         
         {/* PAI DO CONTEÚDO: Ajustado com paddings e margens menores em impressão */}
-        <div className="p-12 md:p-14 font-sans text-slate-800 overflow-y-auto flex-1 print:overflow-hidden print:p-2 print:text-xs">
+        <div className="p-12 md:p-14 font-sans text-slate-800 overflow-y-auto flex-1 print:overflow-hidden print:p-0 print:text-xs">
           
           {/* CABEÇALHO */}
-          <div className="flex justify-between items-end border-b-2 border-slate-800 pb-4 mb-6 print:mb-4 print:pb-2">
+          <div className="flex justify-between items-end border-b-2 border-slate-800 pb-4 mb-6">
             <div>
               <h1 className="text-3xl font-black uppercase tracking-tighter leading-none print:text-2xl">Relatório Clínico</h1>
               <p className="font-bold text-lg text-blue-600 mt-0.5 print:text-sm">Serviço Nacional de Saúde</p>
@@ -75,7 +76,7 @@ export default function ModalRelatorio({ dados, onClose }) {
             <div className="space-y-4 print:space-y-3">
               <div className="space-y-2">
                 <h3 className="text-[10px] print:text-[9px] font-black text-slate-400 uppercase tracking-widest">Dados do Utente</h3>
-                <div className="grid grid-cols-[90px_1fr] gap-1 text-sm print:text-xs">
+                <div className="grid grid-cols-[120px_1fr] gap-1 text-sm print:text-xs">
                   <span className="font-bold text-slate-500">Nome:</span> <span className="font-black text-slate-800">{dados.nome_utente}</span>
                   <span className="font-bold text-slate-500">Nº Utente:</span> <span className="font-mono">{dados.nr_utente || "Não registado"}</span>
                   <span className="font-bold text-slate-500">Idade:</span> <span>{dados.idade ? `${dados.idade} anos` : "N/D"}</span>
@@ -95,7 +96,7 @@ export default function ModalRelatorio({ dados, onClose }) {
             {/* COLUNA 2: DETALHES DO ATENDIMENTO */}
             <div className="space-y-3 bg-slate-50 p-6 rounded-[2rem] border border-slate-100 print:bg-transparent print:border-none print:p-0 h-fit">
                <h3 className="text-[10px] print:text-[9px] font-black text-slate-400 uppercase tracking-widest">Detalhes do Atendimento</h3>
-               <div className="grid grid-cols-[90px_1fr] gap-2 text-sm print:text-xs">
+               <div className="grid grid-cols-[120px_1fr] gap-2 text-sm print:text-xs">
                 <span className="font-bold text-slate-500">Data/Hora:</span> <span className="font-black font-mono">{dados.data_consulta ? new Date(dados.data_consulta).toLocaleString('pt-PT') : '---'}</span>
                 <span className="font-bold text-slate-500">Registo Nº:</span> <span className="font-mono font-bold">#{String(dados.id || dados.consulta_id || "0").padStart(5, '0')}</span>
                 <span className="font-bold text-slate-500">Especialidade:</span> <span className="font-bold uppercase text-xs">{dados.especialidade || "Clínica Geral"}</span>
