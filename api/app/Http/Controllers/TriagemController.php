@@ -398,12 +398,12 @@ class TriagemController extends Controller
         }
     }
 
-    public function historico($id, $role) {
+    public function historico(Request $request, $id, $role) {
         $query = DB::table('consultas')
-            ->join('triagens', 'consultas.triagem_id', '=', 'triagens.id')
-            ->join('utilizadores as u', 'consultas.utente_id', '=', 'u.id')
-            ->join('utilizadores as m', 'consultas.medico_id', '=', 'm.id')
-            ->join('hospitais as h', 'consultas.hospital_id', '=', 'h.id')
+            ->leftJoin('triagens', 'consultas.triagem_id', '=', 'triagens.id')
+            ->leftJoin('utilizadores as u', 'consultas.utente_id', '=', 'u.id')
+            ->leftJoin('utilizadores as m', 'consultas.medico_id', '=', 'm.id')
+            ->leftJoin('hospitais as h', 'consultas.hospital_id', '=', 'h.id')
             ->select(
                 'consultas.*',
                 'u.nome as nome_utente',
@@ -431,11 +431,15 @@ class TriagemController extends Controller
         } elseif ($role === 'diretor' || $role === 'admin') {
             // Diretor Clínico ou Admin veem tudo do hospital a que estão alocados
             $utilizador = DB::table('utilizadores')->where('id', $id)->first();
+            $reqHospitalId = $request->query('hospital_id');
+            
             if ($utilizador && $utilizador->hospital_id) {
                 $query->where('consultas.hospital_id', $utilizador->hospital_id);
+            } elseif (!empty($reqHospitalId) && $reqHospitalId !== 'undefined') {
+                $query->where('consultas.hospital_id', $reqHospitalId);
             }
         }
 
-        return response()->json($query->orderBy('data_consulta', 'desc')->paginate(10));
+        return response()->json($query->orderBy('data_consulta', 'desc')->paginate(100));
     }
 }
