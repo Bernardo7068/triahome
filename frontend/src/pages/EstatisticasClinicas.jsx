@@ -231,10 +231,22 @@ export default function EstatisticasClinicas({ user }) {
 
   const analisadas = useMemo(() => {
     return consultas.map((item) => {
-      const resumo = [item.resumo_ia, item.diagnostico, item.prescricao].filter(Boolean).join(" \n");
+      const diag = (item.diagnostico || "").trim();
+      const presc = (item.prescricao || "").trim();
+      let resumo = (item.resumo_ia || "").trim();
+
+      // Limpeza agressiva: se o resumo contém o diagnóstico ou prescrição no final, remove.
+      if (diag && resumo.toLowerCase().endsWith(diag.toLowerCase())) {
+        resumo = resumo.substring(0, resumo.length - diag.length).trim();
+      }
+      if (presc && resumo.toLowerCase().endsWith(presc.toLowerCase())) {
+        resumo = resumo.substring(0, resumo.length - presc.length).trim();
+      }
+
+      const textoParaAnalise = resumo + " " + diag + " " + presc;
       const categoria = normalizeCategory(item.cor_manchester || item.categoria || item.resultado || "");
-      const expected = inferExpectedCategory(resumo);
-      const groups = detectGroups(resumo);
+      const expected = inferExpectedCategory(textoParaAnalise);
+      const groups = detectGroups(textoParaAnalise);
       const structureScore = [item.cor_manchester, item.resumo_ia, item.diagnostico, item.prescricao].filter(Boolean).length * 16;
       const detailBonus = Math.min(20, Math.floor((item.diagnostico || "").length / 10) + Math.floor((item.prescricao || "").length / 20));
       const mismatchPenalty = Math.abs(severityRank[categoria] - severityRank[expected.category]) * 12;
@@ -474,51 +486,84 @@ export default function EstatisticasClinicas({ user }) {
                   <ShieldAlert size={14} /> Triagens suspeitas
                 </p>
                 <div className="grid gap-3">
-                  {analiseResultado.triagens_suspeitas.map((triagem, idx) => (
-                    <div key={idx} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-black text-slate-900">#{triagem.triagem_id} {triagem.paciente ? `- ${triagem.paciente}` : ""}</p>
-                          <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mt-1">Cor atribuída: {triagem.cor_atribuida || "N/D"}</p>
-                        </div>
-                        <span className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-700">
-                          Suspeita
-                        </span>
-                      </div>
-                      <p className="mt-3 text-sm text-slate-700"><span className="font-black text-slate-900">Motivo:</span> {triagem.motivo || "Sem motivo informado."}</p>
-                      <p className="mt-2 text-sm text-slate-700"><span className="font-black text-slate-900">Ação:</span> {triagem.acao || "Sem ação recomendada."}</p>
-                      <button
-                        type="button"
-                        onClick={() => setSuspeitaExpandidaId((prev) => (prev === String(triagem.triagem_id) ? null : String(triagem.triagem_id)))}
-                        className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100 transition-colors"
-                      >
-                        {suspeitaExpandidaId === String(triagem.triagem_id) ? "Ocultar triagem" : "Ver triagem completa"}
-                      </button>
+                  {analiseResultado.triagens_suspeitas.map((triagem, idx) => {
+                    const tId = triagem.triagem_id || triagem.id;
+                    const corAtribuida = triagem.cor_atribuida || triagem.categoria || triagem.cor || triagem.resultado;
+                    
+                    // Função auxiliar para procurar chaves similares caso a exata não exista
+                    const encontrarValor = (obj, termos) => {
+                      const chave = Object.keys(obj).find(k => 
+                        termos.some(t => k.toLowerCase().includes(t.toLowerCase()))
+                      );
+                      return chave ? obj[chave] : null;
+                    };
 
-                      {suspeitaExpandidaId === String(triagem.triagem_id) && (
-                        <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 grid gap-3 md:grid-cols-2">
+                    // Tenta extrair qualquer texto longo, mesmo que esteja aninhado
+                    const textosEncontrados = [];
+                    const buscarTextos = (obj) => {
+                      if (!obj) return;
+                      Object.entries(obj).forEach(([k, v]) => {
+                        if (typeof v === 'string' && v.length > 10) {
+                          const lowerK = k.toLowerCase();
+                          if (!['paciente', 'utente', 'hospital', 'categoria', 'cor', 'resultado', 'id', 'confidence'].some(m => lowerK.includes(m))) {
+                            textosEncontrados.push(v);
+                          }
+                        } else if (typeof v === 'object' && v !== null) {
+                          buscarTextos(v);
+                        }
+                      });
+                    };
+                    buscarTextos(triagem);
+
+                    const motivo = triagem.motivo || encontrarValor(triagem, ['motivo', 'justific', 'reason', 'insight', 'finding', 'desc', 'analis', 'porqu', 'why', 'explanation', 'critique']) || textosEncontrados[0];
+                    const acao = triagem.acao || encontrarValor(triagem, ['acao', 'action', 'recomen', 'sugest', 'plan', 'orient', 'conduta', 'step', 'recom', 'guia', 'advice', 'suggestion']) || textosEncontrados[1];
+                    
+                    return (
+                      <div key={idx} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Resumo clínico</p>
-                            <p className="mt-1 text-sm text-slate-700 leading-relaxed">
-                              {detalhesPorTriagemId.get(String(triagem.triagem_id))?.resumo || "Sem resumo disponível."}
-                            </p>
+                            <p className="text-sm font-black text-slate-900">#{tId} {triagem.paciente ? `- ${triagem.paciente}` : ""}</p>
+                            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mt-1">Cor atribuída: {corAtribuida || "N/D"}</p>
                           </div>
-                          <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Diagnóstico</p>
-                            <p className="mt-1 text-sm text-slate-700 leading-relaxed">
-                              {detalhesPorTriagemId.get(String(triagem.triagem_id))?.diagnostico || "Sem diagnóstico disponível."}
-                            </p>
-                          </div>
-                          <div className="md:col-span-2">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Prescrição</p>
-                            <p className="mt-1 text-sm text-slate-700 leading-relaxed">
-                              {detalhesPorTriagemId.get(String(triagem.triagem_id))?.prescricao || "Sem prescrição disponível."}
-                            </p>
-                          </div>
+                          <span className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-700">
+                            Suspeita
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSuspeitaExpandidaId((prev) => (prev === String(tId) ? null : String(tId)))}
+                            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100 transition-colors"
+                          >
+                            {suspeitaExpandidaId === String(tId) ? "Ocultar triagem" : "Ver triagem completa"}
+                          </button>
+                        </div>
+
+                        {suspeitaExpandidaId === String(tId) && (
+                          <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 grid gap-3 md:grid-cols-2">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Resumo clínico</p>
+                              <p className="mt-1 text-sm text-slate-700 leading-relaxed">
+                                {detalhesPorTriagemId.get(String(tId))?.resumo_ia || detalhesPorTriagemId.get(String(tId))?.resumo || "Sem resumo disponível."}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Diagnóstico</p>
+                              <p className="mt-1 text-sm text-slate-700 leading-relaxed">
+                                {detalhesPorTriagemId.get(String(tId))?.diagnostico || "Sem diagnóstico disponível."}
+                              </p>
+                            </div>
+                            <div className="md:col-span-2">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Prescrição</p>
+                              <p className="mt-1 text-sm text-slate-700 leading-relaxed">
+                                {detalhesPorTriagemId.get(String(tId))?.prescricao || "Sem prescrição disponível."}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
