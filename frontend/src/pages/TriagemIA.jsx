@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, ArrowLeft } from 'lucide-react';
+import { Activity, ArrowLeft, Building2, ChevronRight, Check } from 'lucide-react';
+import api from '../services/api';
 import { cancelarTriagem, iniciarTriagem, responderTriagem, statusTriagem, guardarResultadoTriagem } from '../services/triagemService';
 
 function mensagemFinal(resultado) {
@@ -59,7 +60,7 @@ function parseResultado(texto) {
 }
 
 export default function TriagemIA({ user, onCancel }) {
-  const [etapa, setEtapa] = useState('inicio');
+  const [etapa, setEtapa] = useState('hospital'); // Mudança: inicia em 'hospital'
   const [entrada, setEntrada] = useState('');
   const [sessionId, setSessionId] = useState('');
   const [mensagemSistema, setMensagemSistema] = useState('');
@@ -68,8 +69,13 @@ export default function TriagemIA({ user, onCancel }) {
   const [erro, setErro] = useState('');
   const [aCarregar, setACarregar] = useState(false);
   const [estadoServidor, setEstadoServidor] = useState(null);
+  
+  // Novos estados para seleção de hospital
+  const [hospitais, setHospitais] = useState([]);
+  const [hospitalSelecionado, setHospitalSelecionado] = useState(user?.hospital_id || null);
 
   const titulo = useMemo(() => {
+    if (etapa === 'hospital') return 'Selecione o Hospital';
     if (etapa === 'pergunta') return 'Entrevista de Triagem';
     if (etapa === 'resultado') return 'Resultado da Triagem';
     return 'Questionário de Triagem IA';
@@ -84,9 +90,26 @@ export default function TriagemIA({ user, onCancel }) {
     }
   };
 
+  const carregarHospitais = async () => {
+    try {
+      const response = await api.get('/hospitais/lotacao');
+      setHospitais(response.data);
+      // Se o user não tiver hospital_id, seleciona o primeiro
+      if (!hospitalSelecionado && response.data.length > 0) {
+        setHospitalSelecionado(response.data[0].id);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar hospitais:', err);
+      setErro('Não foi possível carregar a lista de hospitais.');
+    }
+  };
+
   useEffect(() => {
     (async () => {
       await carregarEstadoServidor();
+      if (etapa === 'hospital') {
+        await carregarHospitais();
+      }
     })();
   }, []);
 
@@ -99,7 +122,7 @@ export default function TriagemIA({ user, onCancel }) {
       }
     }
 
-    setEtapa('inicio');
+    setEtapa('hospital'); // Volta para seleção de hospital ao reiniciar
     setEntrada('');
     setSessionId('');
     setMensagemSistema('');
@@ -108,6 +131,16 @@ export default function TriagemIA({ user, onCancel }) {
     setErro('');
     setACarregar(false);
     carregarEstadoServidor();
+    carregarHospitais();
+  };
+
+  const confirmarHospital = () => {
+    if (!hospitalSelecionado) {
+      setErro('Por favor, selecione um hospital.');
+      return;
+    }
+    setEtapa('inicio');
+    setErro('');
   };
 
   const submeterInicio = async (event) => {
@@ -140,6 +173,7 @@ export default function TriagemIA({ user, onCancel }) {
 
           await guardarResultadoTriagem(
             user.id,
+            hospitalSelecionado, // Usar o hospital selecionado
             parsedResult.categoria,
             parsedResult.justificacao,
             parsedResult.acao,
@@ -197,6 +231,7 @@ export default function TriagemIA({ user, onCancel }) {
 
           await guardarResultadoTriagem(
             user.id,
+            hospitalSelecionado, // Usar o hospital selecionado
             parsedResult.categoria,
             parsedResult.justificacao,
             parsedResult.acao,
@@ -236,10 +271,12 @@ export default function TriagemIA({ user, onCancel }) {
             
             <div className="space-y-2">
               <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-tight">
-                Questionário de Triagem IA
+                {titulo}
               </h1>
               <p className="text-slate-400 text-sm font-bold leading-tight">
-                Responda às questões para avaliarmos a sua prioridade clínica em tempo real.
+                {etapa === 'hospital' 
+                  ? 'Selecione a unidade hospitalar onde pretende realizar a sua consulta.'
+                  : 'Responda às questões para avaliarmos a sua prioridade clínica em tempo real.'}
               </p>
             </div>
           </div>
@@ -255,66 +292,109 @@ export default function TriagemIA({ user, onCancel }) {
           )}
         </aside>
 
-        {/* CAIXA 2: HISTÓRICO DE CONVERSA (CENTRO) */}
+        {/* CAIXA 2: CONTEÚDO PRINCIPAL (CENTRO) */}
         <main className="bg-white rounded-[2rem] border border-slate-200 shadow-sm flex flex-col h-[400px] lg:h-[calc(100vh-160px)] overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-            {historico.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center px-6">
-                <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 max-w-xs">
-                  <Activity size={32} className="text-slate-300 mx-auto mb-3" />
-                  <p className="text-base font-black text-slate-800 mb-1">Entrevista Clínica</p>
-                  <p className="text-slate-400 text-sm font-medium leading-tight">O seu histórico de conversação com a IA médica aparecerá aqui.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {historico.map((mensagem, indice) => (
-                  <div
-                    key={`${mensagem.tipo}-${indice}`}
-                    className={`max-w-[90%] ${
-                      mensagem.tipo === 'utente' ? 'ml-auto' : 'mr-auto'
+          {etapa === 'hospital' ? (
+            <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {hospitais.map((h) => (
+                  <button
+                    key={h.id}
+                    onClick={() => setHospitalSelecionado(h.id)}
+                    className={`relative p-6 rounded-[2rem] border-2 transition-all text-left flex flex-col gap-4 group ${
+                      hospitalSelecionado === h.id
+                        ? 'border-blue-500 bg-blue-50/30'
+                        : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-white'
                     }`}
                   >
-                    <div className={`px-5 py-3 rounded-[1.5rem] shadow-sm font-medium text-base leading-relaxed ${
-                      mensagem.tipo === 'utente'
-                        ? 'bg-blue-600 text-white rounded-tr-none'
-                        : 'bg-slate-50 text-slate-700 border border-slate-100 rounded-tl-none'
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                      hospitalSelecionado === h.id
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white text-slate-400 group-hover:text-blue-500 shadow-sm'
                     }`}>
-                      <p className={`text-[12px] font-black uppercase tracking-widest mb-1 ${
-                        mensagem.tipo === 'utente' ? 'text-blue-200' : 'text-slate-400'
+                      <Building2 size={24} />
+                    </div>
+                    
+                    <div>
+                      <h3 className={`font-black text-lg tracking-tight leading-tight ${
+                        hospitalSelecionado === h.id ? 'text-blue-900' : 'text-slate-800'
                       }`}>
-                        {mensagem.tipo === 'utente' ? 'Você' : 'Assistente IA'}
+                        {h.nome}
+                      </h3>
+                      <p className="text-slate-400 text-sm font-bold mt-1">
+                        {h.morada || 'Unidade Hospitalar'}
                       </p>
-                      {mensagem.texto}
                     </div>
-                  </div>
-                ))}
 
-                {resultado && (
-                  <div className="pt-2">
-                    <div className="bg-slate-900 text-white rounded-[2rem] p-6 shadow-2xl space-y-3">
-                      <div className="inline-block bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        Resultado Final
+                    {hospitalSelecionado === h.id && (
+                      <div className="absolute top-6 right-6 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                        <Check size={14} strokeWidth={4} />
                       </div>
-                      <div>
-                        <h2 className="text-2xl font-black tracking-tighter italic leading-none">
-                          {resultado.emoji} {resultado.cor}
-                        </h2>
-                        {resultado.especialidade && (
-                          <div className="mt-2 text-blue-400 font-black uppercase text-[10px] tracking-widest">
-                            Especialidade Recomendada: {resultado.especialidade}
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-slate-300 text-xs leading-relaxed italic font-medium border-l-2 border-blue-600 pl-4">
-                        "{resultado.resultado}"
-                      </p>
-                    </div>
-                  </div>
-                )}
+                    )}
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+              {historico.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center px-6">
+                  <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 max-w-xs">
+                    <Activity size={32} className="text-slate-300 mx-auto mb-3" />
+                    <p className="text-base font-black text-slate-800 mb-1">Entrevista Clínica</p>
+                    <p className="text-slate-400 text-sm font-medium leading-tight">O seu histórico de conversação com a IA médica aparecerá aqui.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {historico.map((mensagem, indice) => (
+                    <div
+                      key={`${mensagem.tipo}-${indice}`}
+                      className={`max-w-[90%] ${
+                        mensagem.tipo === 'utente' ? 'ml-auto' : 'mr-auto'
+                      }`}
+                    >
+                      <div className={`px-5 py-3 rounded-[1.5rem] shadow-sm font-medium text-base leading-relaxed ${
+                        mensagem.tipo === 'utente'
+                          ? 'bg-blue-600 text-white rounded-tr-none'
+                          : 'bg-slate-50 text-slate-700 border border-slate-100 rounded-tl-none'
+                      }`}>
+                        <p className={`text-[12px] font-black uppercase tracking-widest mb-1 ${
+                          mensagem.tipo === 'utente' ? 'text-blue-200' : 'text-slate-400'
+                        }`}>
+                          {mensagem.tipo === 'utente' ? 'Você' : 'Assistente IA'}
+                        </p>
+                        {mensagem.texto}
+                      </div>
+                    </div>
+                  ))}
+
+                  {resultado && (
+                    <div className="pt-2">
+                      <div className="bg-slate-900 text-white rounded-[2rem] p-6 shadow-2xl space-y-3">
+                        <div className="inline-block bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                          Resultado Final
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-black tracking-tighter italic leading-none">
+                            {resultado.emoji} {resultado.cor}
+                          </h2>
+                          {resultado.especialidade && (
+                            <div className="mt-2 text-blue-400 font-black uppercase text-[10px] tracking-widest">
+                              Especialidade Recomendada: {resultado.especialidade}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-slate-300 text-xs leading-relaxed italic font-medium border-l-2 border-blue-600 pl-4">
+                          "{resultado.resultado}"
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </main>
 
         {/* CAIXA 3: INTERAÇÃO E CONTROLOS (DIREITA) */}
@@ -322,35 +402,67 @@ export default function TriagemIA({ user, onCancel }) {
           
           {/* INPUT BOX */}
           <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm space-y-4 flex-1 flex flex-col min-h-0">
-             <form onSubmit={etapa === 'inicio' ? submeterInicio : submeterResposta} className="space-y-3 flex-1 flex flex-col min-h-0">
-              <div className="space-y-2 flex-1 flex flex-col min-h-0">
-                <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-2">
-                  Descreva o problema
-                </label>
-                <textarea
-                  autoFocus
-                  value={entrada}
-                  onChange={(event) => setEntrada(event.target.value)}
-                  placeholder={etapa === 'inicio' ? 'Ex.: Sinto uma dor forte...' : 'Responda aqui...'}
-                  className="w-full flex-1 min-h-[100px] rounded-[1.5rem] border-2 border-slate-50 bg-slate-50/50 p-4 outline-none focus:border-blue-500 focus:bg-white transition-all font-medium resize-none text-sm text-slate-700 shadow-inner"
-                />
-              </div>
+             {etapa === 'hospital' ? (
+               <div className="flex-1 flex flex-col justify-center gap-6">
+                 <div className="text-center space-y-2">
+                   <div className="w-16 h-16 bg-blue-50 rounded-[1.5rem] flex items-center justify-center text-blue-500 mx-auto mb-4">
+                     <Building2 size={32} />
+                   </div>
+                   <h2 className="font-black text-slate-900 tracking-tight">Pronto a começar?</h2>
+                   <p className="text-slate-400 text-xs font-bold px-4">Confirme o hospital selecionado para iniciar o questionário de triagem.</p>
+                 </div>
 
-              <button
-                type="submit"
-                disabled={aCarregar || !entrada.trim()}
-                className="w-full inline-flex items-center justify-center rounded-[1.25rem] bg-blue-500 hover:bg-blue-600 py-4 font-black text-white transition-all shadow-lg shadow-blue-200 disabled:opacity-50 uppercase text-xs tracking-widest"
-              >
-                {aCarregar ? 'A analisar...' : 'Enviar'}
-              </button>
-            </form>
+                 {erro && (
+                    <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-[11px] font-black uppercase text-center">
+                      {erro}
+                    </div>
+                  )}
+
+                 <button
+                    onClick={confirmarHospital}
+                    className="w-full inline-flex items-center justify-center rounded-[1.25rem] bg-blue-500 hover:bg-blue-600 py-5 font-black text-white transition-all shadow-lg shadow-blue-200 group uppercase text-xs tracking-widest gap-2"
+                  >
+                    Iniciar Triagem
+                    <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+               </div>
+             ) : (
+               <form onSubmit={etapa === 'inicio' ? submeterInicio : submeterResposta} className="space-y-3 flex-1 flex flex-col min-h-0">
+                <div className="space-y-2 flex-1 flex flex-col min-h-0">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-2">
+                    Descreva o problema
+                  </label>
+                  <textarea
+                    autoFocus
+                    value={entrada}
+                    onChange={(event) => setEntrada(event.target.value)}
+                    placeholder={etapa === 'inicio' ? 'Ex.: Sinto uma dor forte...' : 'Responda aqui...'}
+                    className="w-full flex-1 min-h-[100px] rounded-[1.5rem] border-2 border-slate-50 bg-slate-50/50 p-4 outline-none focus:border-blue-500 focus:bg-white transition-all font-medium resize-none text-sm text-slate-700 shadow-inner"
+                  />
+                </div>
+
+                {erro && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-[11px] font-black uppercase text-center">
+                    {erro}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={aCarregar || !entrada.trim()}
+                  className="w-full inline-flex items-center justify-center rounded-[1.25rem] bg-blue-500 hover:bg-blue-600 py-4 font-black text-white transition-all shadow-lg shadow-blue-200 disabled:opacity-50 uppercase text-xs tracking-widest"
+                >
+                  {aCarregar ? 'A analisar...' : 'Enviar'}
+                </button>
+              </form>
+             )}
 
             <div className="text-center">
               <button
                 onClick={reiniciar}
                 className="text-slate-400 hover:text-slate-600 font-black text-[10px] uppercase tracking-[0.2em] transition-colors"
               >
-                Reiniciar
+                {etapa === 'hospital' ? 'Atualizar Lista' : 'Reiniciar'}
               </button>
             </div>
           </div>
@@ -370,3 +482,4 @@ export default function TriagemIA({ user, onCancel }) {
     </div>
   );
 }
+

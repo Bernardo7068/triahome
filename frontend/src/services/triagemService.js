@@ -46,7 +46,7 @@ export function statusTriagem() {
   });
 }
 
-export function guardarResultadoTriagem(utenteId, categoria, justificacao, acao, resumoClinico, especialidade) {
+export function guardarResultadoTriagem(utenteId, hospitalId, categoria, justificacao, acao, resumoClinico, especialidade) {
   /**
    * Envia o resultado final da IA para o backend Laravel guardar na BD
    */
@@ -60,7 +60,7 @@ export function guardarResultadoTriagem(utenteId, categoria, justificacao, acao,
     },
     body: JSON.stringify({
       utente_id: utenteId,
-      hospital_id: 1, // Pode vir de variável de ambiente
+      hospital_id: hospitalId,
       categoria,
       justificacao,
       acao,

@@ -10,5 +10,9 @@
   {
     "type": "sqlite",
     "path": "c:\\Users\\fabio\\Desktop\\Nova pasta (5)\\triahome\\api\\database\\database.sqlite"
+  },
+  {
+    "type": "sqlite",
+    "path": "c:\\Users\\fabio\\Desktop\\ESS\\triahome\\api\\database\\database.sqlite"
   }
 ]
