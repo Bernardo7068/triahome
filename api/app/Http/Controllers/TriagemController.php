@@ -206,13 +206,27 @@ class TriagemController extends Controller
                 ->where('f.estado', 'aguardar')
                 ->where('t.hospital_id', $hospital_id);
 
-            // Lógica de Especialidade:
-            // Se o médico NÃO for Clínica Geral, ele só chama pacientes da sua especialidade.
-            // Se for Clínica Geral, ele pode chamar qualquer um.
+            // Lógica de Especialidade (Simplificada para Demonstração):
+            // 1. Tenta encontrar alguém da especialidade do médico
             if ($especialidadeMedico && $especialidadeMedico !== 'Clínica Geral') {
-                $query->where('t.especialidade', $especialidadeMedico);
+                $tempQuery = clone $query;
+                $proximo = $tempQuery->where('t.especialidade', $especialidadeMedico)
+                    ->orderByRaw("CASE 
+                        WHEN t.cor_manchester = 'vermelho' THEN 1 
+                        WHEN t.cor_manchester = 'laranja' THEN 2 
+                        WHEN t.cor_manchester = 'amarelo' THEN 3 
+                        WHEN t.cor_manchester = 'verde' THEN 4 
+                        ELSE 5 END")
+                    ->orderBy('f.posicao', 'asc')
+                    ->first();
+                
+                if ($proximo) {
+                    $this->marcarComoEmConsulta($proximo->triagem_id);
+                    return response()->json($proximo);
+                }
             }
 
+            // 2. Se não encontrou da especialidade (ou é Clínica Geral), chama o próximo por prioridade
             $proximo = $query->orderByRaw("CASE 
                     WHEN t.cor_manchester = 'vermelho' THEN 1 
                     WHEN t.cor_manchester = 'laranja' THEN 2 
@@ -223,18 +237,19 @@ class TriagemController extends Controller
                 ->first();
 
             if ($proximo) {
-                DB::table('fila_espera')
-                    ->where('triagem_id', $proximo->triagem_id)
-                    ->update([
-                        'estado' => 'em_consulta'
-                    ]);
-
+                $this->marcarComoEmConsulta($proximo->triagem_id);
                 return response()->json($proximo);
             }
             return response()->json(['message' => 'Fila vazia'], 404);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
+    }
+
+    private function marcarComoEmConsulta($triagem_id) {
+        DB::table('fila_espera')
+            ->where('triagem_id', $triagem_id)
+            ->update(['estado' => 'em_consulta']);
     }
 
     public function store(Request $request)
@@ -247,7 +262,7 @@ class TriagemController extends Controller
         try {
             $prompt = "Avalia estes sintomas e dá apenas a cor de Manchester (vermelho, laranja, amarelo, verde ou azul): " . $request->sintomas;
             
-            $response = Http::post('http://localhost:5000', [
+            $response = Http::post('http://192.168.31.155:5000', [
                 'model' => 'llama3',
                 'prompt' => $prompt,
                 'stream' => false

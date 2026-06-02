@@ -6,11 +6,18 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TriagemController;
 use App\Http\Controllers\HospitalController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\FhirController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+// FHIR Routes (Demonstração)
+Route::prefix('fhir')->group(function () {
+    Route::get('/Patient', [FhirController::class, 'listPatients']);
+    Route::get('/Patient/{id}', [FhirController::class, 'getPatient']);
+    Route::get('/Observation/{id}', [FhirController::class, 'getObservation']);
+});
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
