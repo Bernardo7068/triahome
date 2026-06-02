@@ -1,5 +1,5 @@
 // Serviço para chamar o servidor de análise de estatísticas (porta 5001)
-const BASE_URL = import.meta.env.VITE_ESTATISTICAS_URL || 'http://127.0.0.1:5001';
+const BASE_URL = import.meta.env.VITE_ESTATISTICAS_URL;
 
 async function analisarEstatisticas(payload) {
   /**

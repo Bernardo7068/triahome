@@ -17,6 +17,19 @@ export default function MedicoDashboard({ user }) {
   
   const [finalizando, setFinalizando] = useState(false);
   const [agora, setAgora] = useState(new Date());
+  const [fhirData, setFhirData] = useState(null);
+  const [showFhirModal, setShowFhirModal] = useState(false);
+
+  const exportarFHIR = async (tipo, id) => {
+    try {
+      const endpoint = tipo === 'patient' ? `/fhir/Patient/${id}` : `/fhir/Observation/${id}`;
+      const res = await api.get(endpoint);
+      setFhirData(res.data);
+      setShowFhirModal(true);
+    } catch (e) {
+      alert("Erro ao exportar dados FHIR");
+    }
+  };
 
   useEffect(() => {
     const intervalo = setInterval(() => setAgora(new Date()), 60000);
@@ -366,6 +379,56 @@ export default function MedicoDashboard({ user }) {
                     <p className="text-slate-700 italic leading-relaxed text-sm font-medium">" {pacientePopup.descricao_utente}"</p>
                   </div>
                 )}
+
+                <div className="pt-4 flex flex-col gap-2">
+                  <p className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest text-center">Interoperabilidade</p>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => exportarFHIR('patient', pacientePopup.utente_id)}
+                      className="flex-1 bg-white border-2 border-slate-200 text-slate-600 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-slate-50 transition-all"
+                    >
+                      Exportar Paciente (FHIR)
+                    </button>
+                    <button 
+                      onClick={() => exportarFHIR('observation', pacientePopup.triagem_id)}
+                      className="flex-1 bg-blue-600 text-white py-2 rounded-xl text-[10px] font-black uppercase hover:bg-slate-900 transition-all"
+                    >
+                      Exportar Triagem (FHIR)
+                    </button>
+                  </div>
+                </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL FHIR */}
+      {showFhirModal && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-[60] p-4">
+          <div className="bg-slate-900 border border-slate-700 p-8 rounded-4xl w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-blue-400 font-black text-xl tracking-tighter">PROTOCOLO HL7 FHIR</h3>
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Visualização de Dados Padronizados</p>
+              </div>
+              <button onClick={() => setShowFhirModal(false)} className="text-slate-400 hover:text-white bg-white/5 p-2 rounded-full"><X size={20}/></button>
+            </div>
+            
+            <div className="flex-1 overflow-auto bg-black/50 rounded-2xl p-6 font-mono text-xs text-green-400 border border-slate-800">
+              <pre>{JSON.stringify(fhirData, null, 2)}</pre>
+            </div>
+
+            <div className="mt-6 flex justify-between items-center">
+              <p className="text-slate-500 text-[10px] font-medium italic italic">Este JSON pode ser lido por qualquer sistema hospitalar compatível.</p>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(JSON.stringify(fhirData, null, 2));
+                  alert("Copiado para a área de transferência!");
+                }}
+                className="bg-blue-600 text-white px-6 py-2 rounded-xl font-black text-[10px] uppercase hover:bg-white hover:text-blue-600 transition-all"
+              >
+                Copiar JSON
+              </button>
             </div>
           </div>
         </div>
