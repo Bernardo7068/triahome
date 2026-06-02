@@ -61,10 +61,15 @@ public function getLotacao() {
     }
 
     public function chamarUtente(Request $request, $triagem_id) {
-        // Atualiza a fila de espera para "chamado" (Retirei o chamado_em que dava erro)
+        // Atualiza a fila de espera para "chamado" 
         DB::table('fila_espera')
             ->where('triagem_id', $triagem_id)
             ->update(['estado' => 'chamado']);
+            
+        // Também atualiza a triagem para em_espera quando o médico chama
+        DB::table('triagens')
+            ->where('id', $triagem_id)
+            ->update(['estado' => 'em_espera']);
 
         return response()->json(['message' => 'Utente chamado com sucesso']);
     }

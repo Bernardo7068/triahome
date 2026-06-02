@@ -170,20 +170,20 @@ export default function UtenteDashboard({ user, onUpdateUser, modalPerfilAberto,
                 </div>
               )}
 
-              {/* ESTADO: TRIAGEM FEITA (A AGUARDAR CHECK-IN) */}
-              {(estadoAtivo.estado_triagem === 'pendente' || estadoAtivo.estado_triagem === 'checkin_feito') && (
+              {/* ESTADO: TRIAGEM FEITA (A AGUARDAR CHECK-IN / PENDENTE) */}
+              {(estadoAtivo.estado_triagem === 'pendente' || estadoAtivo.estado_triagem === 'checkin_feito') && !estadoAtivo.estado_fila && (
                 <div className="bg-slate-900 rounded-[3.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.3)] text-white overflow-hidden p-1">
                   <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[3.4rem] p-10 md:p-16">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10">
                       <div className="space-y-6">
                         <div className="bg-blue-600/20 text-blue-400 p-4 rounded-3xl w-fit border border-blue-500/30"><Info size={32} /></div>
                         <h2 className="text-4xl md:text-5xl font-black tracking-tighter leading-tight italic">Triagem Online<br/><span className="text-blue-500">Concluída.</span></h2>
-                        <p className="text-slate-400 text-lg font-medium max-w-md">Para entrar na fila de espera, deve validar a sua presença na secretaria do hospital agora.</p>
+                        <p className="text-slate-400 text-lg font-medium max-w-md">Para entrar na fila de espera, deve dirigir-se ao hospital e validar a sua presença na secretaria agora.</p>
                       </div>
                       
                       <div className="bg-white/5 border border-white/10 p-10 rounded-[3rem] flex flex-col items-center space-y-6 w-full md:w-80 backdrop-blur-xl">
                         <div className="text-center">
-                          <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] mb-4">Senha de Validação</p>
+                          <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] mb-4">Código de Validação</p>
                           <p className="text-6xl md:text-7xl font-mono font-black tracking-tighter text-white">#{String(estadoAtivo.triagem_id).padStart(3, '0')}</p>
                         </div>
                         <div className="w-full h-px bg-white/10"></div>

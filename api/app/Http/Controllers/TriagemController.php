@@ -43,50 +43,18 @@ class TriagemController extends Controller
             $categoria_input = $request->categoria ?? 'Verde';
             $cor = $cor_mapa[$categoria_input] ?? 'verde';
             
-            // Procura pela triagem mais recente que ainda não foi concluída
-            $triagem = Triagem::where('utente_id', $request->utente_id)
-                ->whereIn('estado', ['pendente', 'checkin_feito', 'em_espera'])
-                ->orderBy('id', 'desc')
-                ->first();
-            
-            if ($triagem) {
-                // Atualiza triagem existente
-                $triagem->update([
-                    'cor_manchester' => $cor,
-                    'nivel_prioridade' => $this->nivelPrioridadePorCor($cor),
-                    'resumo_ia' => $request->resumo_clinico ?? ($request->justificacao . "\nAção: " . $request->acao),
-                    'especialidade' => $request->especialidade ?? 'Clínica Geral',
-                    'conselhos_autocuidado' => $request->acao,
-                    'estado' => 'pendente'  // Força volta para pendente para a secretaria ver
-                ]);
-                Log::info('Triagem ATUALIZADA com sucesso', ['id' => $triagem->id]);
-            } else {
-                // Cria nova triagem
-                $triagem = Triagem::create([
-                    'utente_id' => $request->utente_id,
-                    'hospital_id' => $request->hospital_id ?? 1,
-                    'cor_manchester' => $cor,
-                    'nivel_prioridade' => $this->nivelPrioridadePorCor($cor),
-                    'resumo_ia' => $request->resumo_clinico ?? ($request->justificacao . "\nAção: " . $request->acao),
-                    'especialidade' => $request->especialidade ?? 'Clínica Geral',
-                    'conselhos_autocuidado' => $request->acao,
-                    'estado' => 'pendente' 
-                ]);
-                Log::info('Triagem CRIADA com sucesso', ['id' => $triagem->id]);
-            }
-
-            // Garante que está na fila se não for autocuidado (azul)
-            if ($cor !== 'azul') {
-                DB::table('fila_espera')->updateOrInsert(
-                    ['triagem_id' => $triagem->id],
-                    [
-                        'hospital_id' => $triagem->hospital_id ?? 1,
-                        'posicao' => 1,
-                        'estado' => 'aguardar',
-                        'criado_em' => now()
-                    ]
-                );
-            }
+            // Cria sempre uma nova triagem
+            $triagem = Triagem::create([
+                'utente_id' => $request->utente_id,
+                'hospital_id' => $request->hospital_id ?? 1,
+                'cor_manchester' => $cor,
+                'nivel_prioridade' => $this->nivelPrioridadePorCor($cor),
+                'resumo_ia' => $request->resumo_clinico ?? ($request->justificacao . "\nAção: " . $request->acao),
+                'especialidade' => $request->especialidade ?? 'Clínica Geral',
+                'conselhos_autocuidado' => $request->acao,
+                'estado' => 'pendente' 
+            ]);
+            Log::info('Triagem CRIADA com sucesso', ['id' => $triagem->id]);
 
             return response()->json([
                 'message' => 'Triagem guardada com sucesso',
@@ -117,9 +85,20 @@ class TriagemController extends Controller
         $user = User::find($utente_id);
         if (!$user) return response()->json(null);
 
-        $triagem = DB::table('v_painel_medico')
-            ->where('nome_utente', $user->nome)
-            ->whereIn('estado_fila', ['aguardar', 'chamado', 'pendente', 'em_consulta'])
+        // Procurar a triagem ativa mais recente (que não esteja finalizada)
+        $triagem = DB::table('triagens as t')
+            ->leftJoin('fila_espera as f', 't.id', '=', 'f.triagem_id')
+            ->select(
+                't.id as triagem_id',
+                't.cor_manchester',
+                't.especialidade',
+                't.estado as estado_triagem',
+                'f.estado as estado_fila',
+                't.hospital_id'
+            )
+            ->where('t.utente_id', $utente_id)
+            ->where('t.estado', '!=', 'finalizado')
+            ->orderBy('t.id', 'desc')
             ->first();
 
         return response()->json($triagem);
@@ -143,13 +122,13 @@ class TriagemController extends Controller
 
             if ($triagem) {
                 // 3. Atualiza os estados corretamente
-                DB::table('triagens')->where('id', $triagem->id)->update(['estado' => 'em_espera']);
+                DB::table('triagens')->where('id', $triagem->id)->update(['estado' => 'checkin_feito']);
 
                 DB::table('fila_espera')->updateOrInsert(
                     ['triagem_id' => $triagem->id],
                     [
                         'hospital_id' => $triagem->hospital_id,
-                        'posicao' => 1,
+                        'posicao' => DB::table('fila_espera')->where('hospital_id', $triagem->hospital_id)->count() + 1,
                         'estado' => 'aguardar',
                         'criado_em' => now()
                     ]
