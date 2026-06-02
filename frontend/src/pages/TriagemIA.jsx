@@ -141,7 +141,7 @@ export default function TriagemIA({ user, onCancel }) {
             parsedResult.categoria,
             parsedResult.justificacao,
             parsedResult.acao,
-            texto,
+            data.resultado,
             parsedResult.especialidade
           );
           
@@ -198,7 +198,7 @@ export default function TriagemIA({ user, onCancel }) {
             parsedResult.categoria,
             parsedResult.justificacao,
             parsedResult.acao,
-            texto,
+            data.resultado,
             parsedResult.especialidade
           );
           
