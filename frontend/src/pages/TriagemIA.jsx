@@ -128,30 +128,8 @@ export default function TriagemIA({ user, onCancel }) {
         setResultado(data);
         setHistorico((atual) => [...atual, { tipo: 'ia', texto: mensagemFinal(data) }]);
         setEtapa('resultado');
-        setMensagemSistema('');
+        setMensagemSistema('✅ Triagem concluída e guardada com sucesso!');
         setSessionId(data.session_id || '');
-        
-        // Guardar resultado na BD
-        try {
-          const parsedResult = parseResultado(data.resultado);
-          console.log('📤 Enviando resultado para guardar:', { userId: user?.id, parsed: parsedResult });
-          
-          const saveResponse = await guardarResultadoTriagem(
-            user.id,
-            parsedResult.categoria,
-            parsedResult.justificacao,
-            parsedResult.acao,
-            data.resultado,
-            parsedResult.especialidade
-          );
-          
-          console.log('✅ Triagem guardada na BD com sucesso:', saveResponse);
-          setMensagemSistema('✅ Triagem guardada! A secretaria pode validar agora.');
-        } catch (err) {
-          console.error('❌ Erro ao guardar triagem:', err);
-          setErro(`⚠️ Triagem feita mas erro ao guardar: ${err.message}`);
-        }
-        
         return;
       }
 
@@ -184,31 +162,9 @@ export default function TriagemIA({ user, onCancel }) {
         setResultado(data);
         setHistorico((atual) => [...atual, { tipo: 'ia', texto: mensagemFinal(data) }]);
         setEtapa('resultado');
-        setMensagemSistema('');
+        setMensagemSistema('✅ Triagem concluída e guardada com sucesso!');
         setEntrada('');
         setSessionId(data.session_id || sessionId);
-        
-        // Guardar resultado na BD
-        try {
-          const parsedResult = parseResultado(data.resultado);
-          console.log('📤 Enviando resultado (resposta) para guardar:', { userId: user?.id, parsed: parsedResult });
-          
-          const saveResponse = await guardarResultadoTriagem(
-            user.id,
-            parsedResult.categoria,
-            parsedResult.justificacao,
-            parsedResult.acao,
-            data.resultado,
-            parsedResult.especialidade
-          );
-          
-          console.log('✅ Triagem guardada na BD com sucesso:', saveResponse);
-          setMensagemSistema('✅ Triagem guardada! A secretaria pode validar agora.');
-        } catch (err) {
-          console.error('❌ Erro ao guardar triagem:', err);
-          setErro(`⚠️ Triagem feita mas erro ao guardar: ${err.message}`);
-        }
-        
         return;
       }
 
