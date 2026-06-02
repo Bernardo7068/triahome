@@ -50,7 +50,7 @@ export function guardarResultadoTriagem(utenteId, categoria, justificacao, acao,
   /**
    * Envia o resultado final da IA para o backend Laravel guardar na BD
    */
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+  const API_URL = import.meta.env.VITE_API_URL;
   
   return fetch(`${API_URL}/triagem/guardar-resultado`, {
     method: 'POST',

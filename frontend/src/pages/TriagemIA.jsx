@@ -126,10 +126,32 @@ export default function TriagemIA({ user, onCancel }) {
 
       if (data.tipo === 'resultado') {
         setResultado(data);
-        setHistorico((atual) => [...atual, { tipo: 'ia', texto: mensagemFinal(data) }]);
+        const iaMsg = mensagemFinal(data);
+        setHistorico((atual) => [...atual, { tipo: 'ia', texto: iaMsg }]);
         setEtapa('resultado');
-        setMensagemSistema('✅ Triagem concluída e guardada com sucesso!');
         setSessionId(data.session_id || '');
+
+        // --- SALVAR NA BD ---
+        try {
+          const parsedResult = parseResultado(data.resultado);
+          
+          // Guardar apenas o texto da justificação (o que vem a seguir a "Justificação:")
+          const resumoSoJustificacao = parsedResult.justificacao;
+
+          await guardarResultadoTriagem(
+            user.id,
+            parsedResult.categoria,
+            parsedResult.justificacao,
+            parsedResult.acao,
+            resumoSoJustificacao, 
+            parsedResult.especialidade
+          );
+          setMensagemSistema('✅ Triagem concluída e guardada com sucesso!');
+        } catch (err) {
+          console.error('Erro ao guardar triagem:', err);
+          setErro('Triagem feita, mas erro ao guardar na base de dados.');
+        }
+        // --------------------
         return;
       }
 
@@ -160,11 +182,33 @@ export default function TriagemIA({ user, onCancel }) {
 
       if (data.tipo === 'resultado') {
         setResultado(data);
-        setHistorico((atual) => [...atual, { tipo: 'ia', texto: mensagemFinal(data) }]);
+        const iaMsg = mensagemFinal(data);
+        setHistorico((atual) => [...atual, { tipo: 'ia', texto: iaMsg }]);
         setEtapa('resultado');
-        setMensagemSistema('✅ Triagem concluída e guardada com sucesso!');
         setEntrada('');
         setSessionId(data.session_id || sessionId);
+
+        // --- SALVAR NA BD ---
+        try {
+          const parsedResult = parseResultado(data.resultado);
+          
+          // Guardar apenas o texto da justificação (o que vem a seguir a "Justificação:")
+          const resumoSoJustificacao = parsedResult.justificacao;
+
+          await guardarResultadoTriagem(
+            user.id,
+            parsedResult.categoria,
+            parsedResult.justificacao,
+            parsedResult.acao,
+            resumoSoJustificacao, 
+            parsedResult.especialidade
+          );
+          setMensagemSistema('✅ Triagem concluída e guardada com sucesso!');
+        } catch (err) {
+          console.error('Erro ao guardar triagem:', err);
+          setErro('Triagem feita, mas erro ao guardar na base de dados.');
+        }
+        // --------------------
         return;
       }
 
